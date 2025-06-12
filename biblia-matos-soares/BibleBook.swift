@@ -12,10 +12,12 @@ import SwiftData
 class BibleBook {
     @Attribute(.unique) var id: UUID = UUID()
     var name: String
+    var order: Int
     var chapters: [BibleChapter] = []
 
-    init(name: String) {
+    init(name: String, order: Int) {
         self.name = name
+        self.order = order
     }
 }
 
