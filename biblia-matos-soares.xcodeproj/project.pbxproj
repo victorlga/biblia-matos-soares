@@ -7,13 +7,18 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		5776D2252DF9022600CFDACC /* biblia-matos-soares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "biblia-matos-soares.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		5776D2252DF9022600CFDACC /* biblia-matos-soares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "biblia-matos-soares.app"; path = "/Users/victor/Desktop/biblia-matos-soares/build/Debug-iphoneos/biblia-matos-soares.app"; sourceTree = "<absolute>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		5776D2272DF9022600CFDACC /* biblia-matos-soares */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "biblia-matos-soares";
+			sourceTree = "<group>";
+		};
+		5776D2472DFB253300CFDACC /* data */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = data;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -33,16 +38,8 @@
 			isa = PBXGroup;
 			children = (
 				5776D2272DF9022600CFDACC /* biblia-matos-soares */,
-				5776D2262DF9022600CFDACC /* Products */,
+				5776D2472DFB253300CFDACC /* data */,
 			);
-			sourceTree = "<group>";
-		};
-		5776D2262DF9022600CFDACC /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				5776D2252DF9022600CFDACC /* biblia-matos-soares.app */,
-			);
-			name = Products;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -62,6 +59,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				5776D2272DF9022600CFDACC /* biblia-matos-soares */,
+				5776D2472DFB253300CFDACC /* data */,
 			);
 			name = "biblia-matos-soares";
 			packageProductDependencies = (
@@ -95,7 +93,7 @@
 			mainGroup = 5776D21C2DF9022600CFDACC;
 			minimizedProjectReferenceProxies = 1;
 			preferredProjectObjectVersion = 77;
-			productRefGroup = 5776D2262DF9022600CFDACC /* Products */;
+			productRefGroup = 5776D21C2DF9022600CFDACC;
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
