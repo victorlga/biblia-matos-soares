@@ -10,7 +10,7 @@ import SwiftData
 
 @Model
 class BibleChapter {
-    @Attribute(.unique) var id: UUID = UUID()  // id único
+    @Attribute(.unique) var id: UUID = UUID()
     var number: Int
     @Relationship var book: BibleBook
     var verses: [BibleVerse] = []
