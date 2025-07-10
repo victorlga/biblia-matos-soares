@@ -9,15 +9,16 @@ import Foundation
 import SwiftData
 
 @Model
-class BibleVerse {
-    @Attribute(.unique) var id: UUID = UUID()
-    var number: Int
+final class BibleVerse {
+    var bookName: String
+    var chapterNumber: Int
+    var verseNumber: Int
     var text: String
-    @Relationship var chapter: BibleChapter
 
-    init(number: Int, text: String, chapter: BibleChapter) {
-        self.number = number
+    init(bookName: String, chapterNumber: Int, verseNumber: Int, text: String) {
+        self.bookName = bookName
+        self.chapterNumber = chapterNumber
+        self.verseNumber = verseNumber
         self.text = text
-        self.chapter = chapter
     }
 }

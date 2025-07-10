@@ -7,7 +7,7 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		5776D2252DF9022600CFDACC /* biblia-matos-soares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; name = "biblia-matos-soares.app"; path = "/Users/victor/Desktop/biblia-matos-soares/build/Debug-iphoneos/biblia-matos-soares.app"; sourceTree = "<absolute>"; };
+		57D23B652DFB3338004D8445 /* biblia-matos-soares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "biblia-matos-soares.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -39,6 +39,7 @@
 			children = (
 				5776D2272DF9022600CFDACC /* biblia-matos-soares */,
 				5776D2472DFB253300CFDACC /* data */,
+				57D23B652DFB3338004D8445 /* biblia-matos-soares.app */,
 			);
 			sourceTree = "<group>";
 		};
@@ -65,7 +66,7 @@
 			packageProductDependencies = (
 			);
 			productName = "biblia-matos-soares";
-			productReference = 5776D2252DF9022600CFDACC /* biblia-matos-soares.app */;
+			productReference = 57D23B652DFB3338004D8445 /* biblia-matos-soares.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
