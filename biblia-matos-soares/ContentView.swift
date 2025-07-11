@@ -40,7 +40,7 @@ struct ContentView: View {
                 // Área de exibição do texto da Bíblia.
                 ScrollViewReader { proxy in
                     ScrollView {
-                        LazyVStack(alignment: .leading, spacing: 20) {
+                        VStack(alignment: .leading, spacing: 20) {
                             if verses.isEmpty {
                                 Text("Carregando versículos ou nenhum versículo encontrado para \(selectedBook) \(selectedChapter).\nVerifique se os dados da Bíblia foram importados.")
                                     .foregroundColor(.gray)
@@ -76,19 +76,16 @@ struct ContentView: View {
                     }
                     // Reage a mudanças no livro selecionado.
                     .onChange(of: selectedBook) { _, newBook in
-                        // Valida se o capítulo atual é válido para o novo livro.
-                        let maxChapters = BibleData.numberOfChapters(forBook: newBook) ?? 1
-                        if selectedChapter > maxChapters {
-                            selectedChapter = 1 // Volta para o capítulo 1 se for inválido.
-                        }
-                        // Rola para o topo do novo capítulo/livro e persiste a seleção.
-                        proxy.scrollTo(1, anchor: .top)
+                        selectedChapter = 1
+                        
+                        // Rola para o topo imediatamente
+                        proxy.scrollTo("top", anchor: .top)
                         storedBook = newBook
                         storedChapter = selectedChapter // Persiste o capítulo, caso tenha sido resetado.
                     }
                     // Reage a mudanças no capítulo selecionado.
                     .onChange(of: selectedChapter) { _, newChapter in
-                        proxy.scrollTo(1, anchor: .top) // Rola para o topo do novo capítulo.
+                        proxy.scrollTo("top", anchor: .top)
                         storedChapter = newChapter // Persiste a seleção.
                     }
                 }
