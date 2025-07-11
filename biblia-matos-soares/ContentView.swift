@@ -9,9 +9,23 @@ struct ContentView: View {
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
 
-    @Query private var verses: [BibleVerse]
-
     @Environment(\.modelContext) private var modelContext
+
+    // Query dinâmica que filtra os versículos baseado no livro e capítulo selecionados
+    private var verses: [BibleVerse] {
+        do {
+            let descriptor = FetchDescriptor<BibleVerse>(
+                predicate: #Predicate { verse in
+                    verse.bookName == selectedBook && verse.chapterNumber == selectedChapter
+                },
+                sortBy: [SortDescriptor(\.verseNumber, order: .forward)]
+            )
+            return try modelContext.fetch(descriptor)
+        } catch {
+            print("Erro ao buscar versículos: \(error)")
+            return []
+        }
+    }
 
     var body: some View {
         ZStack {
