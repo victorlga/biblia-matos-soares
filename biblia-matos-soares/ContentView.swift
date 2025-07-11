@@ -8,6 +8,10 @@ struct ContentView: View {
 
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
+    // Estado para controlar o início do arrasto para detectar a direção
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging: Bool = false
+
 
     @Environment(\.modelContext) private var modelContext
 
@@ -74,18 +78,44 @@ struct ContentView: View {
                         }
                         .padding(.top, 20)
                     }
+                    // Adiciona o gesto de arrastar para navegação
+                    .contentShape(Rectangle()) // Garante que o gesto seja detectável em toda a área
+                    .gesture(
+                        DragGesture()
+                            .onChanged { gesture in
+                                if !isDragging { // Só captura o início do arrasto uma vez
+                                    dragOffset = gesture.translation
+                                    isDragging = true
+                                }
+                            }
+                            .onEnded { gesture in
+                                let horizontalTranslation = gesture.translation.width
+                                let verticalTranslation = gesture.translation.height
+                                
+                                // Determina se o arrasto foi predominantemente horizontal
+                                if abs(horizontalTranslation) > abs(verticalTranslation) {
+                                    if horizontalTranslation > 50 { // Arrasto para a direita
+                                        goToPreviousChapter()
+                                    } else if horizontalTranslation < -50 { // Arrasto para a esquerda
+                                        goToNextChapter()
+                                    }
+                                }
+                                isDragging = false // Reseta o estado de arrasto
+                                dragOffset = .zero // Reseta o offset
+                            }
+                    )
                     // Reage a mudanças no livro selecionado.
                     .onChange(of: selectedBook) { _, newBook in
                         selectedChapter = 1
                         
                         // Rola para o topo imediatamente
-                        proxy.scrollTo("top", anchor: .top)
+                        proxy.scrollTo(1, anchor: .top) // Rola para o primeiro versículo
                         storedBook = newBook
                         storedChapter = selectedChapter // Persiste o capítulo, caso tenha sido resetado.
                     }
                     // Reage a mudanças no capítulo selecionado.
                     .onChange(of: selectedChapter) { _, newChapter in
-                        proxy.scrollTo("top", anchor: .top)
+                        proxy.scrollTo(1, anchor: .top) // Rola para o primeiro versículo
                         storedChapter = newChapter // Persiste a seleção.
                     }
                 }
@@ -97,17 +127,52 @@ struct ContentView: View {
             // Isso garante que a UI reflita o estado persistido na inicialização do app.
             selectedBook = storedBook
             selectedChapter = storedChapter
-
-            // Garante que o capítulo selecionado seja válido na primeira aparição da View,
-            // caso o valor do AppStorage seja inválido para o livro inicial.
-            let maxChapters = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
-            if selectedChapter > maxChapters {
-                selectedChapter = 1
-                storedChapter = 1 // Atualiza o AppStorage também.
+        }
+    }
+    
+    // MARK: - Navigation Logic
+    
+    private func goToPreviousChapter() {
+        let currentBookIndex = BibleData.orderedBookNames.firstIndex(of: selectedBook) ?? 0
+        
+        if selectedChapter > 1 {
+            selectedChapter -= 1
+        } else {
+            // Se for o capítulo 1, tenta ir para o último capítulo do livro anterior
+            if currentBookIndex > 0 {
+                let previousBookName = BibleData.orderedBookNames[currentBookIndex - 1]
+                selectedBook = previousBookName
+                selectedChapter = BibleData.numberOfChapters(forBook: previousBookName) ?? 1 // Último capítulo do livro anterior
+            } else {
+                // Se for Gênesis 1, permanece em Gênesis 1 (ou pode circular para o fim de Apocalipse)
+                // Por enquanto, fica no lugar. Para circular, descomente e ajuste a lógica abaixo:
+                selectedBook = BibleData.orderedBookNames.last ?? "Apocalipse"
+                selectedChapter = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
             }
         }
     }
     
+    private func goToNextChapter() {
+        let currentBookIndex = BibleData.orderedBookNames.firstIndex(of: selectedBook) ?? 0
+        let numberOfChaptersInCurrentBook = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
+        
+        if selectedChapter < numberOfChaptersInCurrentBook {
+            selectedChapter += 1
+        } else {
+            // Se for o último capítulo do livro, tenta ir para o primeiro capítulo do próximo livro
+            if currentBookIndex < BibleData.orderedBookNames.count - 1 {
+                let nextBookName = BibleData.orderedBookNames[currentBookIndex + 1]
+                selectedBook = nextBookName
+                selectedChapter = 1 // Primeiro capítulo do próximo livro
+            } else {
+                // Se for o último capítulo de Apocalipse, permanece em Apocalipse (ou pode circular para Gênesis 1)
+                // Por enquanto, fica no lugar. Para circular, descomente e ajuste a lógica abaixo:
+                selectedBook = BibleData.orderedBookNames.first ?? "Gênesis"
+                selectedChapter = 1
+            }
+        }
+    }
+
     // MARK: - headerView
     // Sub-view para o cabeçalho com os seletores de livro e capítulo.
     private var headerView: some View {
