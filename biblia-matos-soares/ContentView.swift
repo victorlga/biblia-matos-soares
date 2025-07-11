@@ -18,8 +18,8 @@ struct ContentView: View {
     // Dynamic font scaling based on device
     private var verseFontSize: CGFloat {
         switch horizontalSizeClass {
-        case .compact: return 20 // Smaller screens (e.g., iPhone)
-        case .regular: return 26 // Larger screens (e.g., iPad)
+        case .compact: return 22 // Smaller screens (e.g., iPhone)
+        case .regular: return 28 // Larger screens (e.g., iPad)
         default: return 22
         }
     }
@@ -30,9 +30,9 @@ struct ContentView: View {
 
     private var headerFontSize: CGFloat {
         switch horizontalSizeClass {
-        case .compact: return 15
-        case .regular: return 17
-        default: return 16
+        case .compact: return 18
+        case .regular: return 20
+        default: return 18
         }
     }
 
@@ -72,7 +72,7 @@ struct ContentView: View {
                                         .padding(geometry.size.width * 0.05)
                                 } else {
                                     ForEach(verses) { verse in
-                                        HStack(alignment: .top, spacing: geometry.size.width * 0.03) {
+                                        HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
                                             Text("\(verse.verseNumber)")
                                                 .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
                                                 .foregroundColor(.secondary)
