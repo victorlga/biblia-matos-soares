@@ -280,6 +280,8 @@ struct ContentView: View {
                         Text(selectedBook)
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .truncationMode(.tail)
                         Image(systemName: "chevron.down")
                             .font(.system(size: headerFontSize * 0.7))
                             .foregroundColor(.secondary)
