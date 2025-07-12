@@ -18,9 +18,9 @@ struct ContentView: View {
     // Dynamic font scaling based on device
     private var verseFontSize: CGFloat {
         switch horizontalSizeClass {
-        case .compact: return 22 // Smaller screens (e.g., iPhone)
-        case .regular: return 28 // Larger screens (e.g., iPad)
-        default: return 22
+        case .compact: return 24 // Smaller screens (e.g., iPhone)
+        case .regular: return 34 // Larger screens (e.g., iPad)
+        default: return 24
         }
     }
 
@@ -30,9 +30,9 @@ struct ContentView: View {
 
     private var headerFontSize: CGFloat {
         switch horizontalSizeClass {
-        case .compact: return 18
-        case .regular: return 20
-        default: return 18
+        case .compact: return 20
+        case .regular: return 28
+        default: return 20
         }
     }
 
