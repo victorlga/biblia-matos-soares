@@ -60,8 +60,7 @@ struct ContentView: View {
     }
 
     var body: some View {
-        // Wrap the content in a NavigationStack to enable NavigationLink
-        NavigationStack { // <--- ADDED NavigationStack
+        NavigationStack {
             GeometryReader { geometry in
                 ZStack {
                     Color.black
@@ -80,29 +79,8 @@ struct ContentView: View {
                                             .multilineTextAlignment(.center)
                                             .padding(geometry.size.width * 0.05)
                                     } else {
-                                        ForEach(verses) { verse in
-                                            HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
-                                                Text("\(verse.verseNumber)")
-                                                    .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
-                                                    .foregroundColor(.secondary)
-                                                    .frame(width: geometry.size.width * 0.08, alignment: .leading)
-
-                                                Text(verse.text)
-                                                    .font(.system(size: verseFontSize, weight: .regular, design: .serif))
-                                                    .foregroundColor(.primary)
-                                                    .lineSpacing(4)
-                                                    .multilineTextAlignment(.leading)
-                                            }
-                                            .padding(.horizontal, geometry.size.width * 0.05)
-                                            .id(verse.verseNumber)
-                                            // Highlight background
-                                            .background(verse.isHighlighted ? Color.yellow.opacity(0.3) : Color.clear)
-                                            .cornerRadius(5) // Slightly rounded corners for the highlight
-                                            // Long press gesture for highlighting
-                                            .onLongPressGesture(minimumDuration: 0.5) {
-                                                toggleHighlight(for: verse)
-                                            }
-                                        }
+                                        // Renderizar versículos com destaque contínuo
+                                        versesWithContinuousHighlight(geometry: geometry)
                                     }
 
                                     Color.clear
@@ -177,7 +155,84 @@ struct ContentView: View {
                     selectedChapter = storedChapter
                 }
             }
-        } // <--- END NavigationStack
+        }
+    }
+
+    // Nova função para renderizar versículos com destaque contínuo
+    private func versesWithContinuousHighlight(geometry: GeometryProxy) -> some View {
+        let groupedVerses = groupConsecutiveHighlightedVerses(verses)
+        
+        return VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
+            ForEach(groupedVerses, id: \.id) { group in
+                VStack(alignment: .leading, spacing: group.isHighlighted ? 0 : geometry.size.height * 0.02) {
+                    ForEach(group.verses) { verse in
+                        HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
+                            Text("\(verse.verseNumber)")
+                                .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
+                                .foregroundColor(.secondary)
+                                .frame(width: geometry.size.width * 0.08, alignment: .leading)
+
+                            Text(verse.text)
+                                .font(.system(size: verseFontSize, weight: .regular, design: .serif))
+                                .foregroundColor(.primary)
+                                .lineSpacing(4)
+                                .multilineTextAlignment(.leading)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+                        .padding(.horizontal, geometry.size.width * 0.05)
+                        .padding(.vertical, group.isHighlighted ? 4 : 0)
+                        .id(verse.verseNumber)
+                        .onLongPressGesture(minimumDuration: 0.5) {
+                            toggleHighlight(for: verse)
+                        }
+                    }
+                }
+                .background(
+                    // Fundo que se estende por toda a largura
+                    Rectangle()
+                        .fill(group.isHighlighted ? Color.yellow.opacity(0.3) : Color.clear)
+                        .frame(maxWidth: .infinity)
+                )
+                .cornerRadius(group.isHighlighted ? 8 : 0)
+            }
+        }
+    }
+
+    // Estrutura para agrupar versículos
+    private struct VerseGroup {
+        let id = UUID()
+        let verses: [BibleVerse]
+        let isHighlighted: Bool
+    }
+
+    // Função para agrupar versículos consecutivos destacados
+    private func groupConsecutiveHighlightedVerses(_ verses: [BibleVerse]) -> [VerseGroup] {
+        var groups: [VerseGroup] = []
+        var currentGroup: [BibleVerse] = []
+        var currentHighlightState: Bool = false
+        
+        for verse in verses {
+            if currentGroup.isEmpty {
+                // Primeiro versículo
+                currentGroup.append(verse)
+                currentHighlightState = verse.isHighlighted
+            } else if verse.isHighlighted == currentHighlightState {
+                // Mesmo estado de destaque, adicionar ao grupo atual
+                currentGroup.append(verse)
+            } else {
+                // Estado de destaque mudou, criar novo grupo
+                groups.append(VerseGroup(verses: currentGroup, isHighlighted: currentHighlightState))
+                currentGroup = [verse]
+                currentHighlightState = verse.isHighlighted
+            }
+        }
+        
+        // Adicionar o último grupo
+        if !currentGroup.isEmpty {
+            groups.append(VerseGroup(verses: currentGroup, isHighlighted: currentHighlightState))
+        }
+        
+        return groups
     }
 
     private func goToPreviousChapter() {
@@ -277,12 +332,11 @@ struct ContentView: View {
                         )
                 }
 
-                // New button for highlighted verses
-                Spacer() // Pushes the new button to the right
+                Spacer()
                 NavigationLink {
                     HighlightedVersesView()
                 } label: {
-                    Image(systemName: "bookmark.fill") // or "star.fill", "highlighter" etc.
+                    Image(systemName: "bookmark.fill")
                         .font(.system(size: headerFontSize * 0.8))
                         .foregroundColor(.white)
                         .padding(8)
@@ -314,7 +368,6 @@ struct ContentView: View {
         speechSynthesizer.speak(utterance)
     }
     
-    // New function to toggle highlight
     private func toggleHighlight(for verse: BibleVerse) {
         verse.isHighlighted.toggle()
         do {
