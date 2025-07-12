@@ -72,11 +72,12 @@ struct ContentView: View {
                             ScrollView {
                                 VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
                                     if verses.isEmpty {
-                                        Text("Carregando versículos ou nenhum versículo encontrado para \(selectedBook) \(selectedChapter).\nVerifique se os dados da Bíblia foram importados.")
-                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                            .foregroundColor(.gray)
-                                            .multilineTextAlignment(.center)
-                                            .padding(geometry.size.width * 0.05)
+                                        Text("Selecione um livro e um capítulo.")
+                                                    .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                    .foregroundColor(.gray)
+                                                    .multilineTextAlignment(.center)
+                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                            
                                     } else {
                                         // Renderizar versículos com destaque contínuo
                                         versesWithContinuousHighlight(geometry: geometry)
