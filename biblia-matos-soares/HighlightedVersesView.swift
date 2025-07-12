@@ -3,7 +3,7 @@ import SwiftData
 
 // Estrutura auxiliar para agrupar versículos por capítulo
 struct GroupedChapter: Identifiable {
-    let id = UUID() // Usado para identificar cada grupo em ForEach
+    let id = UUID()
     let bookName: String
     let chapterNumber: Int
     let verses: [BibleVerse]
@@ -12,7 +12,7 @@ struct GroupedChapter: Identifiable {
 struct HighlightedVersesView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
     @Query private var highlightedVerses: [BibleVerse]
 
     init() {
@@ -27,81 +27,71 @@ struct HighlightedVersesView: View {
             ]
         )
     }
-    
-    // Função de ordenação personalizada para usar BibleData.bookOrderMap
+
+    // Ordena os versículos destacados com base na ordem da Bíblia
     private var sortedHighlightedVerses: [BibleVerse] {
-        highlightedVerses.sorted { (verse1, verse2) in
-            let book1Order = BibleData.bookOrderMap[verse1.bookName] ?? 999
-            let book2Order = BibleData.bookOrderMap[verse2.bookName] ?? 999
-            
-            if book1Order != book2Order {
-                return book1Order < book2Order
-            } else if verse1.chapterNumber != verse2.chapterNumber {
-                return verse1.chapterNumber < verse2.chapterNumber
+        highlightedVerses.sorted { v1, v2 in
+            let order1 = BibleData.bookOrderMap[v1.bookName] ?? 999
+            let order2 = BibleData.bookOrderMap[v2.bookName] ?? 999
+
+            if order1 != order2 {
+                return order1 < order2
+            } else if v1.chapterNumber != v2.chapterNumber {
+                return v1.chapterNumber < v2.chapterNumber
             } else {
-                return verse1.verseNumber < verse2.verseNumber
+                return v1.verseNumber < v2.verseNumber
             }
         }
     }
 
-    // Nova propriedade computada para agrupar os versículos destacados
+    // Agrupa versículos destacados por livro e capítulo
     private var groupedHighlightedVerses: [GroupedChapter] {
-        var currentGroups: [GroupedChapter] = []
+        var groups: [GroupedChapter] = []
         var currentBook: String?
         var currentChapter: Int?
-        var versesForCurrentChapter: [BibleVerse] = []
+        var verses: [BibleVerse] = []
 
         for verse in sortedHighlightedVerses {
-            // Verifica se estamos começando um novo livro ou um novo capítulo
             if verse.bookName != currentBook || verse.chapterNumber != currentChapter {
-                // Se havia versículos acumulados para o capítulo anterior, adicione-os aos grupos
-                if !versesForCurrentChapter.isEmpty {
-                    if let book = currentBook, let chapter = currentChapter {
-                        currentGroups.append(GroupedChapter(bookName: book, chapterNumber: chapter, verses: versesForCurrentChapter))
-                    }
+                if let book = currentBook, let chapter = currentChapter, !verses.isEmpty {
+                    groups.append(GroupedChapter(bookName: book, chapterNumber: chapter, verses: verses))
                 }
-                // Reinicia para o novo livro/capítulo
                 currentBook = verse.bookName
                 currentChapter = verse.chapterNumber
-                versesForCurrentChapter = [verse]
+                verses = [verse]
             } else {
-                // Continua acumulando versículos para o capítulo atual
-                versesForCurrentChapter.append(verse)
+                verses.append(verse)
             }
         }
 
-        // Adiciona quaisquer versículos restantes após o término do loop
-        if !versesForCurrentChapter.isEmpty {
-            if let book = currentBook, let chapter = currentChapter {
-                currentGroups.append(GroupedChapter(bookName: book, chapterNumber: chapter, verses: versesForCurrentChapter))
-            }
+        if let book = currentBook, let chapter = currentChapter, !verses.isEmpty {
+            groups.append(GroupedChapter(bookName: book, chapterNumber: chapter, verses: verses))
         }
-        return currentGroups
+
+        return groups
     }
-    
+
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
-            
-            VStack {
-                // Custom Navigation Bar for Highlighted Verses
+            Color.black.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                // Barra superior personalizada
                 HStack {
                     Button {
-                        dismiss() // Go back to ContentView
+                        dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
                             .font(.title2)
                             .foregroundColor(.white)
                     }
-                    
+
                     Text("Voltar")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
-                    
+
                     Spacer()
-                    
                 }
                 .padding()
                 .background(
@@ -114,7 +104,7 @@ struct HighlightedVersesView: View {
                         )
                 )
 
-                if sortedHighlightedVerses.isEmpty { // Usamos sortedHighlightedVerses para verificar se há algum versículo
+                if sortedHighlightedVerses.isEmpty {
                     Spacer()
                     Text("Nenhum versículo destacado ainda.")
                         .font(.headline)
@@ -124,34 +114,38 @@ struct HighlightedVersesView: View {
                     List {
                         ForEach(groupedHighlightedVerses) { group in
                             Section {
-                                ForEach(group.verses) { verse in
-                                    VStack(alignment: .leading) {
-                                        Text("\(verse.verseNumber) \(verse.text)") // Formato: Versículo Texto
+                                VStack(alignment: .leading, spacing: 10) {
+                                    ForEach(group.verses) { verse in
+                                        Text("\(verse.verseNumber). \(verse.text)")
                                             .font(.body)
                                             .foregroundColor(.primary)
-                                            .lineLimit(nil)
-                                    }
-                                    .padding(.vertical, 2) // Espaçamento vertical diminuído
-                                    .listRowBackground(verse.isHighlighted ? Color.yellow.opacity(0.3) : Color.clear)
-                                    .listRowSeparator(.hidden)
-                                    .onLongPressGesture(minimumDuration: 0.5) {
-                                        toggleHighlight(for: verse)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .onLongPressGesture(minimumDuration: 0.5) {
+                                                toggleHighlight(for: verse)
+                                            }
                                     }
                                 }
+                                .padding(.vertical, 12)
+                                .padding(.horizontal, 16)
+                                .background(Color.yellow.opacity(0.3))
+                                .cornerRadius(10)
+                                .listRowInsets(EdgeInsets())
+                                .listRowSeparator(.hidden)
                             } header: {
-                                // Formato: ### Livro Capítulo
-                                Text("\(group.bookName), Capítulo \(group.chapterNumber)")
-                                    .font(.title3) // Ajuste o tamanho da fonte conforme necessário
-                                    .fontWeight(.bold)
-                                    .foregroundColor(.white)
-                                    .padding(.vertical, 8)
-                                    .padding(.horizontal, 16)
-                                    .background(Color.black)
-                                    .listRowInsets(EdgeInsets()) // Remove insets padrão para o cabeçalho da seção
+                                ZStack(alignment: .leading) {
+                                    Color.black
+                                    Text("\(group.bookName), Cap. \(group.chapterNumber)")
+                                        .font(.title3)
+                                        .fontWeight(.bold)
+                                        .foregroundColor(.white)
+                                        .padding(.top, 12)
+                                        .padding(.bottom, 8)
+                                        .padding(.leading, 16)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
+                            .listRowInsets(EdgeInsets())
                         }
-                        // O listRowInsets para a List pode ser ajustado ou removido se necessário
-                        // .listRowInsets(EdgeInsets(top: 0, leading: 16, bottom: 0, trailing: 16))
                     }
                     .listStyle(.plain)
                     .scrollContentBackground(.hidden)
@@ -161,14 +155,15 @@ struct HighlightedVersesView: View {
         .preferredColorScheme(.dark)
         .navigationBarBackButtonHidden(true)
     }
-    
+
+    // Alterna o destaque do versículo e salva
     private func toggleHighlight(for verse: BibleVerse) {
         verse.isHighlighted.toggle()
         do {
             try modelContext.save()
-            print("Verse \(verse.verseNumber) of \(verse.bookName) \(verse.chapterNumber) highlight toggled to \(verse.isHighlighted) from HighlightedVersesView")
+            print("Highlight toggled for verse \(verse.verseNumber) in \(verse.bookName) \(verse.chapterNumber)")
         } catch {
-            print("Failed to save highlight change from HighlightedVersesView: \(error.localizedDescription)")
+            print("Failed to save highlight change: \(error.localizedDescription)")
         }
     }
 }
