@@ -48,7 +48,6 @@ struct ContentView: View {
             )
             return try modelContext.fetch(descriptor)
         } catch {
-            print("Error fetching verses: \(error)")
             return []
         }
     }
@@ -280,8 +279,8 @@ struct ContentView: View {
                         Text(selectedBook)
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .truncationMode(.tail)
+                            .lineLimit(1) // Ensures the book name is on a single line
+                            .truncationMode(.tail) // Truncates if needed
                         Image(systemName: "chevron.down")
                             .font(.system(size: headerFontSize * 0.7))
                             .foregroundColor(.secondary)
@@ -302,9 +301,11 @@ struct ContentView: View {
                     }
                 } label: {
                     HStack {
-                        Text("Cap. \(selectedChapter)")
+                        Text("\(selectedChapter)")
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.5)
                         Image(systemName: "chevron.down")
                             .font(.system(size: headerFontSize * 0.7))
                             .foregroundColor(.secondary)
@@ -316,6 +317,8 @@ struct ContentView: View {
                             .fill(Color(.systemGray6))
                     )
                 }
+                
+                Spacer()
                 
                 Button {
                     if speechSynthesizer.isSpeaking {
@@ -335,7 +338,6 @@ struct ContentView: View {
                         )
                 }
 
-                Spacer()
                 NavigationLink {
                     HighlightedVersesView()
                 } label: {
@@ -375,7 +377,6 @@ struct ContentView: View {
         verse.isHighlighted.toggle()
         do {
             try modelContext.save()
-            print("Verse \(verse.verseNumber) of \(verse.bookName) \(verse.chapterNumber) highlight toggled to \(verse.isHighlighted)")
         } catch {
             print("Failed to save highlight change: \(error.localizedDescription)")
         }
