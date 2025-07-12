@@ -325,7 +325,8 @@ struct ContentView: View {
                     Image(systemName: "speaker.wave.2.fill")
                         .font(.system(size: headerFontSize * 0.8))
                         .foregroundColor(.white)
-                        .padding(8)
+                        .frame(height: geometry.size.height * 0.045)
+                        .padding(.horizontal, geometry.size.width * 0.04)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(.systemGray6))
