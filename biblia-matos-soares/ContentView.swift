@@ -10,6 +10,7 @@ struct ContentView: View {
     @State private var selectedChapter: Int = 1
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
+    @State private var currentTranslationDirection: HorizontalTransitionDirection = .none // To track swipe direction for animation
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -52,6 +53,13 @@ struct ContentView: View {
         }
     }
 
+    // Enum to control the direction of the slide animation
+    enum HorizontalTransitionDirection {
+        case left
+        case right
+        case none
+    }
+
     var body: some View {
         GeometryReader { geometry in
             ZStack {
@@ -63,9 +71,10 @@ struct ContentView: View {
 
                     ScrollViewReader { proxy in
                         ScrollView {
+                            // Apply the transition to the VStack containing the verses
                             VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
                                 if verses.isEmpty {
-                                    Text("Carregando versículos ou nenhum versículo encontrado para \(selectedBook) \(selectedChapter).\nVerifique se os dados da Bíblia foram importados.")
+                                    Text("Selecione um livro e um capítulo.")
                                         .font(.system(size: headerFontSize, weight: .regular, design: .serif))
                                         .foregroundColor(.gray)
                                         .multilineTextAlignment(.center)
@@ -93,6 +102,8 @@ struct ContentView: View {
                                     .frame(height: geometry.size.height * 0.1)
                             }
                             .padding(.top, geometry.size.height * 0.02)
+                            // Apply the slide transition based on the swipe direction
+                            .transition(currentTransition)
                         }
                         .contentShape(Rectangle())
                         .gesture(
@@ -109,24 +120,38 @@ struct ContentView: View {
 
                                     if abs(horizontalTranslation) > abs(verticalTranslation) {
                                         if horizontalTranslation > 50 {
-                                            goToPreviousChapter()
+                                            withAnimation(.easeOut(duration: 0.3)) {
+                                                currentTranslationDirection = .right // Swiping right, content comes from left
+                                                goToPreviousChapter()
+                                            }
                                         } else if horizontalTranslation < -50 {
-                                            goToNextChapter()
+                                            withAnimation(.easeOut(duration: 0.3)) {
+                                                currentTranslationDirection = .left // Swiping left, content comes from right
+                                                goToNextChapter()
+                                            }
                                         }
                                     }
                                     isDragging = false
                                     dragOffset = .zero
+                                    // Reset direction after animation or a short delay
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                        currentTranslationDirection = .none
+                                    }
                                 }
                         )
                         .onChange(of: selectedBook) { _, newBook in
-                            selectedChapter = 1
-                            proxy.scrollTo(1, anchor: .top)
-                            storedBook = newBook
-                            storedChapter = selectedChapter
+                            withAnimation(.easeOut(duration: 0.3)) { // Animate book change
+                                selectedChapter = 1
+                                proxy.scrollTo(1, anchor: .top)
+                                storedBook = newBook
+                                storedChapter = selectedChapter
+                            }
                         }
                         .onChange(of: selectedChapter) { _, newChapter in
-                            proxy.scrollTo(1, anchor: .top)
-                            storedChapter = newChapter
+                            withAnimation(.easeOut(duration: 0.3)) { // Animate chapter change
+                                proxy.scrollTo(1, anchor: .top)
+                                storedChapter = newChapter
+                            }
                         }
                     }
                 }
@@ -151,6 +176,7 @@ struct ContentView: View {
             selectedBook = previousBookName
             selectedChapter = BibleData.numberOfChapters(forBook: previousBookName) ?? 1
         } else {
+            // Loop back to the last chapter of the last book
             selectedBook = BibleData.orderedBookNames.last ?? "Apocalipse"
             selectedChapter = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
         }
@@ -167,6 +193,7 @@ struct ContentView: View {
             selectedBook = nextBookName
             selectedChapter = 1
         } else {
+            // Loop back to the first chapter of the first book
             selectedBook = BibleData.orderedBookNames.first ?? "Gênesis"
             selectedChapter = 1
         }
@@ -237,6 +264,28 @@ struct ContentView: View {
                         alignment: .bottom
                     )
             )
+        }
+    }
+
+    // MARK: - Transition Logic
+
+    private var currentTransition: AnyTransition {
+        switch currentTranslationDirection {
+        case .left:
+            // When swiping left, new content slides in from the right
+            return .asymmetric(
+                insertion: .move(edge: .trailing),
+                removal: .move(edge: .leading)
+            )
+        case .right:
+            // When swiping right, new content slides in from the left
+            return .asymmetric(
+                insertion: .move(edge: .leading),
+                removal: .move(edge: .trailing)
+            )
+        case .none:
+            // No specific direction, use a default transition or identity
+            return .identity
         }
     }
 }
