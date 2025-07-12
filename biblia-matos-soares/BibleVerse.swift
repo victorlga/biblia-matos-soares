@@ -1,10 +1,3 @@
-//
-//  BibleVerse.swift
-//  biblia-matos-soares
-//
-//  Created by Victor Luís Gama de Assis on 12/06/25.
-//
-
 import Foundation
 import SwiftData
 
@@ -14,6 +7,7 @@ final class BibleVerse {
     var chapterNumber: Int
     var verseNumber: Int
     var text: String
+    var isHighlighted: Bool = false
 
     init(bookName: String, chapterNumber: Int, verseNumber: Int, text: String) {
         self.bookName = bookName

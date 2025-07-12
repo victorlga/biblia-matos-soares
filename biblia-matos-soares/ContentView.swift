@@ -12,7 +12,6 @@ struct ContentView: View {
     @State private var isDragging: Bool = false
     @State private var currentTranslationDirection: HorizontalTransitionDirection = .none
     
-    // AQUI: Usamos a mesma instância do AVSpeechSynthesizer para todo o ciclo de vida da View
     @State private var speechSynthesizer = AVSpeechSynthesizer()
 
     @Environment(\.modelContext) private var modelContext
@@ -61,114 +60,124 @@ struct ContentView: View {
     }
 
     var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                Color.black
-                    .ignoresSafeArea()
+        // Wrap the content in a NavigationStack to enable NavigationLink
+        NavigationStack { // <--- ADDED NavigationStack
+            GeometryReader { geometry in
+                ZStack {
+                    Color.black
+                        .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    headerView(geometry: geometry)
+                    VStack(spacing: 0) {
+                        headerView(geometry: geometry)
 
-                    ScrollViewReader { proxy in
-                        ScrollView {
-                            VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
-                                if verses.isEmpty {
-                                    Text("Carregando versículos ou nenhum versículo encontrado para \(selectedBook) \(selectedChapter).\nVerifique se os dados da Bíblia foram importados.")
-                                        .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                        .foregroundColor(.gray)
-                                        .multilineTextAlignment(.center)
-                                        .padding(geometry.size.width * 0.05)
-                                } else {
-                                    ForEach(verses) { verse in
-                                        HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
-                                            Text("\(verse.verseNumber)")
-                                                .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
-                                                .foregroundColor(.secondary)
-                                                .frame(width: geometry.size.width * 0.08, alignment: .leading)
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
+                                    if verses.isEmpty {
+                                        Text("Carregando versículos ou nenhum versículo encontrado para \(selectedBook) \(selectedChapter).\nVerifique se os dados da Bíblia foram importados.")
+                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.center)
+                                            .padding(geometry.size.width * 0.05)
+                                    } else {
+                                        ForEach(verses) { verse in
+                                            HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
+                                                Text("\(verse.verseNumber)")
+                                                    .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
+                                                    .foregroundColor(.secondary)
+                                                    .frame(width: geometry.size.width * 0.08, alignment: .leading)
 
-                                            Text(verse.text)
-                                                .font(.system(size: verseFontSize, weight: .regular, design: .serif))
-                                                .foregroundColor(.primary)
-                                                .lineSpacing(4)
-                                                .multilineTextAlignment(.leading)
-                                        }
-                                        .padding(.horizontal, geometry.size.width * 0.05)
-                                        .id(verse.verseNumber)
-                                    }
-                                }
-
-                                Color.clear
-                                    .frame(height: geometry.size.height * 0.1)
-                            }
-                            .padding(.top, geometry.size.height * 0.02)
-                            .transition(currentTransition)
-                        }
-                        .contentShape(Rectangle())
-                        .gesture(
-                            DragGesture()
-                                .onChanged { gesture in
-                                    if !isDragging {
-                                        dragOffset = gesture.translation
-                                        isDragging = true
-                                    }
-                                }
-                                .onEnded { gesture in
-                                    let horizontalTranslation = gesture.translation.width
-                                    let verticalTranslation = gesture.translation.height
-
-                                    if abs(horizontalTranslation) > abs(verticalTranslation) {
-                                        if speechSynthesizer.isSpeaking {
-                                            speechSynthesizer.stopSpeaking(at: .immediate)
-                                        }
-
-                                        if horizontalTranslation > 50 {
-                                            withAnimation(.easeOut(duration: 0.3)) {
-                                                currentTranslationDirection = .right
-                                                goToPreviousChapter()
+                                                Text(verse.text)
+                                                    .font(.system(size: verseFontSize, weight: .regular, design: .serif))
+                                                    .foregroundColor(.primary)
+                                                    .lineSpacing(4)
+                                                    .multilineTextAlignment(.leading)
                                             }
-                                        } else if horizontalTranslation < -50 {
-                                            withAnimation(.easeOut(duration: 0.3)) {
-                                                currentTranslationDirection = .left
-                                                goToNextChapter()
+                                            .padding(.horizontal, geometry.size.width * 0.05)
+                                            .id(verse.verseNumber)
+                                            // Highlight background
+                                            .background(verse.isHighlighted ? Color.yellow.opacity(0.3) : Color.clear)
+                                            .cornerRadius(5) // Slightly rounded corners for the highlight
+                                            // Long press gesture for highlighting
+                                            .onLongPressGesture(minimumDuration: 0.5) {
+                                                toggleHighlight(for: verse)
                                             }
                                         }
                                     }
-                                    isDragging = false
-                                    dragOffset = .zero
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                                        currentTranslationDirection = .none
-                                    }
+
+                                    Color.clear
+                                        .frame(height: geometry.size.height * 0.1)
                                 }
-                        )
-                        .onChange(of: selectedBook) { _, newBook in
-                            if speechSynthesizer.isSpeaking {
-                                speechSynthesizer.stopSpeaking(at: .immediate)
+                                .padding(.top, geometry.size.height * 0.02)
+                                .transition(currentTransition)
                             }
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                selectedChapter = 1
-                                proxy.scrollTo(1, anchor: .top)
-                                storedBook = newBook
-                                storedChapter = selectedChapter
+                            .contentShape(Rectangle())
+                            .gesture(
+                                DragGesture()
+                                    .onChanged { gesture in
+                                        if !isDragging {
+                                            dragOffset = gesture.translation
+                                            isDragging = true
+                                        }
+                                    }
+                                    .onEnded { gesture in
+                                        let horizontalTranslation = gesture.translation.width
+                                        let verticalTranslation = gesture.translation.height
+
+                                        if abs(horizontalTranslation) > abs(verticalTranslation) {
+                                            if speechSynthesizer.isSpeaking {
+                                                speechSynthesizer.stopSpeaking(at: .immediate)
+                                            }
+
+                                            if horizontalTranslation > 50 {
+                                                withAnimation(.easeOut(duration: 0.3)) {
+                                                    currentTranslationDirection = .right
+                                                    goToPreviousChapter()
+                                                }
+                                            } else if horizontalTranslation < -50 {
+                                                withAnimation(.easeOut(duration: 0.3)) {
+                                                    currentTranslationDirection = .left
+                                                    goToNextChapter()
+                                                }
+                                            }
+                                        }
+                                        isDragging = false
+                                        dragOffset = .zero
+                                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                            currentTranslationDirection = .none
+                                        }
+                                    }
+                            )
+                            .onChange(of: selectedBook) { _, newBook in
+                                if speechSynthesizer.isSpeaking {
+                                    speechSynthesizer.stopSpeaking(at: .immediate)
+                                }
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    selectedChapter = 1
+                                    proxy.scrollTo(1, anchor: .top)
+                                    storedBook = newBook
+                                    storedChapter = selectedChapter
+                                }
                             }
-                        }
-                        .onChange(of: selectedChapter) { _, newChapter in
-                            if speechSynthesizer.isSpeaking {
-                                speechSynthesizer.stopSpeaking(at: .immediate)
-                            }
-                            withAnimation(.easeOut(duration: 0.3)) {
-                                proxy.scrollTo(1, anchor: .top)
-                                storedChapter = newChapter
+                            .onChange(of: selectedChapter) { _, newChapter in
+                                if speechSynthesizer.isSpeaking {
+                                    speechSynthesizer.stopSpeaking(at: .immediate)
+                                }
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    proxy.scrollTo(1, anchor: .top)
+                                    storedChapter = newChapter
+                                }
                             }
                         }
                     }
                 }
+                .preferredColorScheme(.dark)
+                .onAppear {
+                    selectedBook = storedBook
+                    selectedChapter = storedChapter
+                }
             }
-            .preferredColorScheme(.dark)
-            .onAppear {
-                selectedBook = storedBook
-                selectedChapter = storedChapter
-            }
-        }
+        } // <--- END NavigationStack
     }
 
     private func goToPreviousChapter() {
@@ -252,7 +261,6 @@ struct ContentView: View {
                 }
                 
                 Button {
-                    // Se o sintetizador estiver falando, pare-o. Caso contrário, comece a ler.
                     if speechSynthesizer.isSpeaking {
                         speechSynthesizer.stopSpeaking(at: .immediate)
                     } else {
@@ -269,7 +277,20 @@ struct ContentView: View {
                         )
                 }
 
-                Spacer()
+                // New button for highlighted verses
+                Spacer() // Pushes the new button to the right
+                NavigationLink {
+                    HighlightedVersesView()
+                } label: {
+                    Image(systemName: "bookmark.fill") // or "star.fill", "highlighter" etc.
+                        .font(.system(size: headerFontSize * 0.8))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
             }
             .padding(.horizontal, geometry.size.width * 0.05)
             .padding(.top, geometry.size.height * 0.01)
@@ -289,8 +310,19 @@ struct ContentView: View {
     private func readCurrentChapter() {
         let fullChapterText = verses.map { $0.text }.joined(separator: " ")
         let utterance = AVSpeechUtterance(string: fullChapterText)
-        utterance.voice = AVSpeechSynthesisVoice(language: "")
+        utterance.voice = AVSpeechSynthesisVoice(language: "pt-BR")
         speechSynthesizer.speak(utterance)
+    }
+    
+    // New function to toggle highlight
+    private func toggleHighlight(for verse: BibleVerse) {
+        verse.isHighlighted.toggle()
+        do {
+            try modelContext.save()
+            print("Verse \(verse.verseNumber) of \(verse.bookName) \(verse.chapterNumber) highlight toggled to \(verse.isHighlighted)")
+        } catch {
+            print("Failed to save highlight change: \(error.localizedDescription)")
+        }
     }
 
     private var currentTransition: AnyTransition {
