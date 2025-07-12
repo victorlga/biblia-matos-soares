@@ -1,8 +1,8 @@
 import SwiftUI
 import SwiftData
+import AVFoundation
 
 struct ContentView: View {
-    // Persist last selected book and chapter
     @AppStorage("lastSelectedBook") private var storedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @AppStorage("lastSelectedChapter") private var storedChapter: Int = 1
 
@@ -10,23 +10,25 @@ struct ContentView: View {
     @State private var selectedChapter: Int = 1
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
-    @State private var currentTranslationDirection: HorizontalTransitionDirection = .none // To track swipe direction for animation
+    @State private var currentTranslationDirection: HorizontalTransitionDirection = .none
+    
+    // AQUI: Usamos a mesma instância do AVSpeechSynthesizer para todo o ciclo de vida da View
+    @State private var speechSynthesizer = AVSpeechSynthesizer()
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
-    // Dynamic font scaling based on device
     private var verseFontSize: CGFloat {
         switch horizontalSizeClass {
-        case .compact: return 24 // Smaller screens (e.g., iPhone)
-        case .regular: return 34 // Larger screens (e.g., iPad)
+        case .compact: return 24
+        case .regular: return 34
         default: return 24
         }
     }
 
     private var verseNumberFontSize: CGFloat {
-        verseFontSize // Scale verse number relative to verse text
+        verseFontSize
     }
 
     private var headerFontSize: CGFloat {
@@ -37,7 +39,6 @@ struct ContentView: View {
         }
     }
 
-    // Dynamic query for verses
     private var verses: [BibleVerse] {
         do {
             let descriptor = FetchDescriptor<BibleVerse>(
@@ -53,7 +54,6 @@ struct ContentView: View {
         }
     }
 
-    // Enum to control the direction of the slide animation
     enum HorizontalTransitionDirection {
         case left
         case right
@@ -71,10 +71,9 @@ struct ContentView: View {
 
                     ScrollViewReader { proxy in
                         ScrollView {
-                            // Apply the transition to the VStack containing the verses
                             VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
                                 if verses.isEmpty {
-                                    Text("Selecione um livro e um capítulo.")
+                                    Text("Carregando versículos ou nenhum versículo encontrado para \(selectedBook) \(selectedChapter).\nVerifique se os dados da Bíblia foram importados.")
                                         .font(.system(size: headerFontSize, weight: .regular, design: .serif))
                                         .foregroundColor(.gray)
                                         .multilineTextAlignment(.center)
@@ -102,7 +101,6 @@ struct ContentView: View {
                                     .frame(height: geometry.size.height * 0.1)
                             }
                             .padding(.top, geometry.size.height * 0.02)
-                            // Apply the slide transition based on the swipe direction
                             .transition(currentTransition)
                         }
                         .contentShape(Rectangle())
@@ -119,28 +117,34 @@ struct ContentView: View {
                                     let verticalTranslation = gesture.translation.height
 
                                     if abs(horizontalTranslation) > abs(verticalTranslation) {
+                                        if speechSynthesizer.isSpeaking {
+                                            speechSynthesizer.stopSpeaking(at: .immediate)
+                                        }
+
                                         if horizontalTranslation > 50 {
                                             withAnimation(.easeOut(duration: 0.3)) {
-                                                currentTranslationDirection = .right // Swiping right, content comes from left
+                                                currentTranslationDirection = .right
                                                 goToPreviousChapter()
                                             }
                                         } else if horizontalTranslation < -50 {
                                             withAnimation(.easeOut(duration: 0.3)) {
-                                                currentTranslationDirection = .left // Swiping left, content comes from right
+                                                currentTranslationDirection = .left
                                                 goToNextChapter()
                                             }
                                         }
                                     }
                                     isDragging = false
                                     dragOffset = .zero
-                                    // Reset direction after animation or a short delay
                                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
                                         currentTranslationDirection = .none
                                     }
                                 }
                         )
                         .onChange(of: selectedBook) { _, newBook in
-                            withAnimation(.easeOut(duration: 0.3)) { // Animate book change
+                            if speechSynthesizer.isSpeaking {
+                                speechSynthesizer.stopSpeaking(at: .immediate)
+                            }
+                            withAnimation(.easeOut(duration: 0.3)) {
                                 selectedChapter = 1
                                 proxy.scrollTo(1, anchor: .top)
                                 storedBook = newBook
@@ -148,7 +152,10 @@ struct ContentView: View {
                             }
                         }
                         .onChange(of: selectedChapter) { _, newChapter in
-                            withAnimation(.easeOut(duration: 0.3)) { // Animate chapter change
+                            if speechSynthesizer.isSpeaking {
+                                speechSynthesizer.stopSpeaking(at: .immediate)
+                            }
+                            withAnimation(.easeOut(duration: 0.3)) {
                                 proxy.scrollTo(1, anchor: .top)
                                 storedChapter = newChapter
                             }
@@ -164,8 +171,6 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - Navigation Logic
-
     private func goToPreviousChapter() {
         let currentBookIndex = BibleData.orderedBookNames.firstIndex(of: selectedBook) ?? 0
 
@@ -176,7 +181,6 @@ struct ContentView: View {
             selectedBook = previousBookName
             selectedChapter = BibleData.numberOfChapters(forBook: previousBookName) ?? 1
         } else {
-            // Loop back to the last chapter of the last book
             selectedBook = BibleData.orderedBookNames.last ?? "Apocalipse"
             selectedChapter = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
         }
@@ -193,13 +197,10 @@ struct ContentView: View {
             selectedBook = nextBookName
             selectedChapter = 1
         } else {
-            // Loop back to the first chapter of the first book
             selectedBook = BibleData.orderedBookNames.first ?? "Gênesis"
             selectedChapter = 1
         }
     }
-
-    // MARK: - Header View
 
     private func headerView(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
@@ -249,6 +250,24 @@ struct ContentView: View {
                             .fill(Color(.systemGray6))
                     )
                 }
+                
+                Button {
+                    // Se o sintetizador estiver falando, pare-o. Caso contrário, comece a ler.
+                    if speechSynthesizer.isSpeaking {
+                        speechSynthesizer.stopSpeaking(at: .immediate)
+                    } else {
+                        readCurrentChapter()
+                    }
+                } label: {
+                    Image(systemName: "speaker.wave.2.fill")
+                        .font(.system(size: headerFontSize * 0.8))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
 
                 Spacer()
             }
@@ -266,25 +285,27 @@ struct ContentView: View {
             )
         }
     }
-
-    // MARK: - Transition Logic
+    
+    private func readCurrentChapter() {
+        let fullChapterText = verses.map { $0.text }.joined(separator: " ")
+        let utterance = AVSpeechUtterance(string: fullChapterText)
+        utterance.voice = AVSpeechSynthesisVoice(language: "")
+        speechSynthesizer.speak(utterance)
+    }
 
     private var currentTransition: AnyTransition {
         switch currentTranslationDirection {
         case .left:
-            // When swiping left, new content slides in from the right
             return .asymmetric(
                 insertion: .move(edge: .trailing),
                 removal: .move(edge: .leading)
             )
         case .right:
-            // When swiping right, new content slides in from the left
             return .asymmetric(
                 insertion: .move(edge: .leading),
                 removal: .move(edge: .trailing)
             )
         case .none:
-            // No specific direction, use a default transition or identity
             return .identity
         }
     }
