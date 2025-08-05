@@ -110,7 +110,7 @@ struct HighlightedVersesView: View {
 
                 if sortedHighlightedVerses.isEmpty {
                     Spacer()
-                    Text("Nenhum versículo marcado. Pressione e segure um versículo para o marcar.")
+                    Text("Nenhum versículo marcado. Toque e segure um versículo para marcá-lo.")
                         .font(.headline)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
