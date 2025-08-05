@@ -340,7 +340,11 @@ struct ContentView: View {
                 }
 
                 NavigationLink {
-                    HighlightedVersesView()
+                    HighlightedVersesView { bookName, chapterNumber in
+                        // Callback para navegar para o versículo específico
+                        selectedBook = bookName
+                        selectedChapter = chapterNumber
+                    }
                 } label: {
                     Image(systemName: "bookmark.fill")
                         .font(.system(size: headerFontSize * 0.8))
@@ -401,7 +405,3 @@ struct ContentView: View {
     }
 }
 
-#Preview {
-    ContentView()
-        .modelContainer(for: BibleVerse.self, inMemory: true)
-}

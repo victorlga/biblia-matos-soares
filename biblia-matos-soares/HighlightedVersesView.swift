@@ -14,8 +14,12 @@ struct HighlightedVersesView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query private var highlightedVerses: [BibleVerse]
+    
+    // Callback para navegar para um versículo específico no ContentView
+    var onNavigateToVerse: ((String, Int) -> Void)?
 
-    init() {
+    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+        self.onNavigateToVerse = onNavigateToVerse
         _highlightedVerses = Query(
             filter: #Predicate<BibleVerse> { verse in
                 verse.isHighlighted == true
@@ -106,54 +110,74 @@ struct HighlightedVersesView: View {
 
                 if sortedHighlightedVerses.isEmpty {
                     Spacer()
-                    Text("Nenhum versículo destacado ainda.")
+                    Text("Nenhum versículo marcado. Pressione e segure um versículo para o marcar.")
                         .font(.headline)
                         .foregroundColor(.gray)
+                        .multilineTextAlignment(.center)
+                        .padding()
                     Spacer()
                 } else {
-                    List {
-                        ForEach(groupedHighlightedVerses) { group in
-                            Section {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    ForEach(group.verses) { verse in
-                                        Text("\(verse.verseNumber). \(verse.text)")
-                                            .font(.body)
-                                            .foregroundColor(.primary)
-                                            .frame(maxWidth: .infinity, alignment: .leading)
-                                            .onLongPressGesture(minimumDuration: 0.5) {
-                                                toggleHighlight(for: verse)
-                                            }
+                    ScrollView {
+                        LazyVStack(spacing: 20) {
+                            ForEach(groupedHighlightedVerses) { group in
+                                VStack(alignment: .leading, spacing: 0) {
+                                    // Header do capítulo
+                                    HStack {
+                                        Text("\(group.bookName), Cap. \(group.chapterNumber)")
+                                            .font(.title3)
+                                            .fontWeight(.bold)
+                                            .foregroundColor(.white)
+                                        Spacer()
                                     }
+                                    .padding(.horizontal, 16)
+                                    .padding(.bottom, 8)
+                                    
+                                    // Versículos do capítulo
+                                    VStack(alignment: .leading, spacing: 8) {
+                                        ForEach(group.verses) { verse in
+                                            VStack(alignment: .leading, spacing: 0) {
+                                                Text("\(verse.verseNumber). \(verse.text)")
+                                                    .font(.body)
+                                                    .foregroundColor(.primary)
+                                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                                    .padding(.horizontal, 16)
+                                                    .padding(.vertical, 12)
+                                                    .background(Color.yellow.opacity(0.3))
+                                                    .cornerRadius(8)
+                                                    .contextMenu {
+                                                        Button {
+                                                            openVerse(verse)
+                                                        } label: {
+                                                            Label("Abrir", systemImage: "book.open")
+                                                        }
+                                                        
+                                                        Button(role: .destructive) {
+                                                            toggleHighlight(for: verse)
+                                                        } label: {
+                                                            Label("Desmarcar", systemImage: "bookmark.slash")
+                                                        }
+                                                    }
+                                            }
+                                        }
+                                    }
+                                    .padding(.horizontal, 16)
                                 }
-                                .padding(.vertical, 12)
-                                .padding(.horizontal, 16)
-                                .background(Color.yellow.opacity(0.3))
-                                .cornerRadius(10)
-                                .listRowInsets(EdgeInsets())
-                                .listRowSeparator(.hidden)
-                            } header: {
-                                ZStack(alignment: .leading) {
-                                    Color.black
-                                    Text("\(group.bookName), Cap. \(group.chapterNumber)")
-                                        .font(.title3)
-                                        .fontWeight(.bold)
-                                        .foregroundColor(.white)
-                                        .padding(.top, 12)
-                                        .padding(.bottom, 8)
-                                        .padding(.leading, 16)
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
                             }
-                            .listRowInsets(EdgeInsets())
                         }
+                        .padding(.top, 16)
+                        .padding(.bottom, 32)
                     }
-                    .listStyle(.plain)
-                    .scrollContentBackground(.hidden)
                 }
             }
         }
         .preferredColorScheme(.dark)
         .navigationBarBackButtonHidden(true)
+    }
+
+    // Função para abrir um versículo no ContentView
+    private func openVerse(_ verse: BibleVerse) {
+        onNavigateToVerse?(verse.bookName, verse.chapterNumber)
+        dismiss()
     }
 
     // Alterna o destaque do versículo e salva
@@ -166,9 +190,4 @@ struct HighlightedVersesView: View {
             print("Failed to save highlight change: \(error.localizedDescription)")
         }
     }
-}
-
-#Preview {
-    HighlightedVersesView()
-        .modelContainer(for: BibleVerse.self, inMemory: true)
 }
