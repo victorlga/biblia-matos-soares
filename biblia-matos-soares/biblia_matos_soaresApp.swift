@@ -1,36 +1,79 @@
 import SwiftUI
 import SwiftData
+import FirebaseCore
+import FirebaseMessaging
+import UserNotifications
 
+// MARK: - AppDelegate for Firebase + Push Notifications
+class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
+        
+        // Configure Firebase
+        FirebaseApp.configure()
+        
+        // Request notification permissions
+        UNUserNotificationCenter.current().delegate = self
+        UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            print("🔔 Notification permission granted: \(granted)")
+        }
+        application.registerForRemoteNotifications()
+        
+        // Set Firebase Messaging delegate
+        Messaging.messaging().delegate = self
+        
+        return true
+    }
+    
+    // Get APNs token
+    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+        Messaging.messaging().apnsToken = deviceToken
+    }
+    
+    // Handle FCM token refresh
+    func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        print("✅ FCM token: \(String(describing: fcmToken))")
+    }
+    
+    // Foreground notifications
+    func userNotificationCenter(_ center: UNUserNotificationCenter,
+                                willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        completionHandler([.banner, .sound, .badge])
+    }
+}
+
+// MARK: - Main App
 @main
 struct biblia_matos_soaresApp: App {
-    // Criação do container de dados persistente
+    // Register AppDelegate for Firebase
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
+    
+    // SwiftData container
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            BibleVerse.self,
-        ])
+        let schema = Schema([BibleVerse.self])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("❌ Erro ao criar o banco de dados: \(error)")
+            fatalError("❌ Error creating database: \(error)")
         }
     }()
-
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .modelContext(sharedModelContainer.mainContext) // injeta o contexto
+                .modelContext(sharedModelContainer.mainContext)
                 .task {
                     let context = sharedModelContainer.mainContext
                     let importer = BibleImporter(context: context)
-
-                    // >>> AQUI: Adicione a verificação condicional <<<
+                    
                     if !(await importer.hasImportedData()) {
-                        print("📖 Iniciando importação da Bíblia (primeira vez)...")
+                        print("📖 Importing Bible for the first time…")
                         await importer.importBible()
                     } else {
-                        print("✅ Bíblia já importada. Não é necessário importar novamente.")
-                        print("Total de versículos: \(await importer.countVerses())")
+                        print("✅ Bible already imported.")
+                        print("Total verses: \(await importer.countVerses())")
                     }
                 }
         }
