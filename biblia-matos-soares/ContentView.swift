@@ -216,11 +216,11 @@ struct ContentView: View {
                                 Label("Adicionar Nota", systemImage: "note.text")
                             }
                             
-                            Button {
-                                copyVerseReference(verse)
-                            } label: {
-                                Label("Copiar Referência", systemImage: "doc.on.doc")
-                            }
+                            //Button {
+                            //    copyVerseReference(verse)
+                            //} label: {
+                            //    Label("Copiar Referência", systemImage: "doc.on.doc")
+                            //}
                             
                             Button {
                                 shareVerse(verse)
