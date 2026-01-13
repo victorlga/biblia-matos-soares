@@ -7,6 +7,7 @@ struct biblia_matos_soaresApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             BibleVerse.self,
+            VerseNote.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

@@ -1,10 +1,12 @@
 import SwiftUI
 import SwiftData
 import AVFoundation
+import UIKit
 
 struct ContentView: View {
     @AppStorage("lastSelectedBook") private var storedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @AppStorage("lastSelectedChapter") private var storedChapter: Int = 1
+    @AppStorage("readingHistory") private var readingHistoryData: Data = Data()
 
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
@@ -13,6 +15,9 @@ struct ContentView: View {
     @State private var currentTranslationDirection: HorizontalTransitionDirection = .none
     
     @State private var speechSynthesizer = AVSpeechSynthesizer()
+    @State private var showingNoteEditor = false
+    @State private var verseForNote: BibleVerse?
+    @State private var noteToEdit: VerseNote?
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -135,6 +140,7 @@ struct ContentView: View {
                                     proxy.scrollTo(1, anchor: .top)
                                     storedBook = newBook
                                     storedChapter = selectedChapter
+                                    updateReadingHistory()
                                 }
                             }
                             .onChange(of: selectedChapter) { _, newChapter in
@@ -144,6 +150,7 @@ struct ContentView: View {
                                 withAnimation(.easeOut(duration: 0.3)) {
                                     proxy.scrollTo(1, anchor: .top)
                                     storedChapter = newChapter
+                                    updateReadingHistory()
                                 }
                             }
                         }
@@ -153,6 +160,14 @@ struct ContentView: View {
                 .onAppear {
                     selectedBook = storedBook
                     selectedChapter = storedChapter
+                    updateReadingHistory()
+                }
+                .sheet(isPresented: $showingNoteEditor) {
+                    if let note = noteToEdit {
+                        NoteEditorView(existingNote: note)
+                    } else if let verse = verseForNote {
+                        NoteEditorView(verse: verse)
+                    }
                 }
             }
         }
@@ -171,6 +186,10 @@ struct ContentView: View {
                                 .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
                                 .foregroundColor(.secondary)
                                 .frame(width: geometry.size.width * 0.08, alignment: .leading)
+                                .onLongPressGesture(minimumDuration: 0.3) {
+                                    let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
+                                    copyVerseReference(verse)
+                                }
 
                             Text(verse.text)
                                 .font(.system(size: verseFontSize, weight: .regular, design: .serif))
@@ -182,6 +201,33 @@ struct ContentView: View {
                         .padding(.horizontal, geometry.size.width * 0.05)
                         .padding(.vertical, group.isHighlighted ? 4 : 0)
                         .id(verse.verseNumber)
+                        .contextMenu {
+                            Button {
+                                toggleHighlight(for: verse)
+                            } label: {
+                                Label(verse.isHighlighted ? "Desmarcar" : "Marcar", systemImage: verse.isHighlighted ? "bookmark.slash" : "bookmark")
+                            }
+                            
+                            Button {
+                                verseForNote = verse
+                                noteToEdit = nil
+                                showingNoteEditor = true
+                            } label: {
+                                Label("Adicionar Nota", systemImage: "note.text")
+                            }
+                            
+                            Button {
+                                copyVerseReference(verse)
+                            } label: {
+                                Label("Copiar Referência", systemImage: "doc.on.doc")
+                            }
+                            
+                            Button {
+                                shareVerse(verse)
+                            } label: {
+                                Label("Compartilhar", systemImage: "square.and.arrow.up")
+                            }
+                        }
                         .onLongPressGesture(minimumDuration: 0.5) {
                             toggleHighlight(for: verse)
                         }
@@ -340,6 +386,40 @@ struct ContentView: View {
                 }
 
                 NavigationLink {
+                    SearchView { bookName, chapterNumber in
+                        // Callback para navegar para o versículo específico
+                        selectedBook = bookName
+                        selectedChapter = chapterNumber
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: headerFontSize * 0.8))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
+                
+                NavigationLink {
+                    NotesView { bookName, chapterNumber in
+                        // Callback para navegar para o versículo específico
+                        selectedBook = bookName
+                        selectedChapter = chapterNumber
+                    }
+                } label: {
+                    Image(systemName: "note.text")
+                        .font(.system(size: headerFontSize * 0.8))
+                        .foregroundColor(.white)
+                        .padding(8)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
+                
+                NavigationLink {
                     HighlightedVersesView { bookName, chapterNumber in
                         // Callback para navegar para o versículo específico
                         selectedBook = bookName
@@ -384,6 +464,47 @@ struct ContentView: View {
             try modelContext.save()
         } catch {
             print("Failed to save highlight change: \(error.localizedDescription)")
+        }
+    }
+    
+    private func copyVerseReference(_ verse: BibleVerse) {
+        let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
+        UIPasteboard.general.string = reference
+        
+        // Haptic feedback
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+    }
+    
+    private func shareVerse(_ verse: BibleVerse) {
+        let shareText = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber) - \(verse.text)"
+        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
+        
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(activityVC, animated: true)
+        }
+    }
+    
+    private func updateReadingHistory() {
+        let historyItem = "\(selectedBook)|\(selectedChapter)"
+        var history: [String] = []
+        
+        if let decoded = try? JSONDecoder().decode([String].self, from: readingHistoryData) {
+            history = decoded
+        }
+        
+        // Remove if already exists
+        history.removeAll { $0 == historyItem }
+        // Add to front
+        history.insert(historyItem, at: 0)
+        // Keep only last 10
+        if history.count > 10 {
+            history = Array(history.prefix(10))
+        }
+        
+        if let encoded = try? JSONEncoder().encode(history) {
+            readingHistoryData = encoded
         }
     }
 
