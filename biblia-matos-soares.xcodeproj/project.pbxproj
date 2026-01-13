@@ -6,14 +6,7 @@
 	objectVersion = 77;
 	objects = {
 
-/* Begin PBXBuildFile section */
-		570AFA082E7C9AD600AF459C /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = 570AFA072E7C9AD600AF459C /* GoogleService-Info.plist */; };
-		570AFA0B2E7C9D9200AF459C /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 570AFA0A2E7C9D9200AF459C /* FirebaseCore */; };
-		570AFA0D2E7C9D9200AF459C /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 570AFA0C2E7C9D9200AF459C /* FirebaseMessaging */; };
-/* End PBXBuildFile section */
-
 /* Begin PBXFileReference section */
-		570AFA072E7C9AD600AF459C /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		57D23B652DFB3338004D8445 /* biblia-matos-soares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "biblia-matos-soares.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -35,8 +28,6 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				570AFA0D2E7C9D9200AF459C /* FirebaseMessaging in Frameworks */,
-				570AFA0B2E7C9D9200AF459C /* FirebaseCore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -49,7 +40,6 @@
 				5776D2272DF9022600CFDACC /* biblia-matos-soares */,
 				5776D2472DFB253300CFDACC /* data */,
 				57D23B652DFB3338004D8445 /* biblia-matos-soares.app */,
-				570AFA072E7C9AD600AF459C /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -74,8 +64,6 @@
 			);
 			name = "biblia-matos-soares";
 			packageProductDependencies = (
-				570AFA0A2E7C9D9200AF459C /* FirebaseCore */,
-				570AFA0C2E7C9D9200AF459C /* FirebaseMessaging */,
 			);
 			productName = "biblia-matos-soares";
 			productReference = 57D23B652DFB3338004D8445 /* biblia-matos-soares.app */;
@@ -105,9 +93,6 @@
 			);
 			mainGroup = 5776D21C2DF9022600CFDACC;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				570AFA092E7C9D9200AF459C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
-			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 5776D21C2DF9022600CFDACC;
 			projectDirPath = "";
@@ -123,7 +108,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				570AFA082E7C9AD600AF459C /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -274,7 +258,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -282,8 +267,6 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.victorassis.biblia-matos-soares";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -303,7 +286,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -311,8 +295,6 @@
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.victorassis.biblia-matos-soares";
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -341,30 +323,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
-/* Begin XCRemoteSwiftPackageReference section */
-		570AFA092E7C9D9200AF459C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.3.0;
-			};
-		};
-/* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		570AFA0A2E7C9D9200AF459C /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 570AFA092E7C9D9200AF459C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-		570AFA0C2E7C9D9200AF459C /* FirebaseMessaging */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 570AFA092E7C9D9200AF459C /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseMessaging;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 5776D21D2DF9022600CFDACC /* Project object */;
 }
