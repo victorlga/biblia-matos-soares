@@ -187,7 +187,6 @@ struct ContentView: View {
                                 .foregroundColor(.secondary)
                                 .frame(width: geometry.size.width * 0.08, alignment: .leading)
                                 .onLongPressGesture(minimumDuration: 0.3) {
-                                    let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
                                     copyVerseReference(verse)
                                 }
 
