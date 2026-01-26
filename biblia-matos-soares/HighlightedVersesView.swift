@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 // Estrutura auxiliar para agrupar versículos por capítulo
 struct GroupedChapter: Identifiable {
@@ -83,6 +84,8 @@ struct HighlightedVersesView: View {
                 // Barra superior personalizada
                 HStack {
                     Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
@@ -146,12 +149,16 @@ struct HighlightedVersesView: View {
                                                     .cornerRadius(8)
                                                     .contextMenu {
                                                         Button {
+                                                            let generator = UIImpactFeedbackGenerator(style: .light)
+                                                            generator.impactOccurred()
                                                             openVerse(verse)
                                                         } label: {
                                                             Label("Abrir", systemImage: "book.open")
                                                         }
-                                                        
+
                                                         Button(role: .destructive) {
+                                                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                                                            generator.impactOccurred()
                                                             toggleHighlight(for: verse)
                                                         } label: {
                                                             Label("Desmarcar", systemImage: "bookmark.slash")

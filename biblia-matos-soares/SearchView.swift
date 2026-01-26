@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct SearchView: View {
     @Environment(\.modelContext) private var modelContext
@@ -40,6 +41,8 @@ struct SearchView: View {
                 // Barra superior
                 HStack {
                     Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
@@ -81,6 +84,8 @@ struct SearchView: View {
                     
                     if !searchText.isEmpty {
                         Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
                             searchText = ""
                             searchResults = []
                         } label: {
@@ -139,6 +144,8 @@ struct SearchView: View {
                                         .fill(Color(.systemGray6))
                                 )
                                 .onTapGesture {
+                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                    generator.impactOccurred()
                                     openVerse(verse)
                                 }
                             }

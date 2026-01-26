@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 struct NoteEditorView: View {
     @Environment(\.modelContext) private var modelContext
@@ -41,6 +42,8 @@ struct NoteEditorView: View {
                 // Barra superior
                 HStack {
                     Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
                         dismiss()
                     } label: {
                         Text("Cancelar")
@@ -118,7 +121,11 @@ struct NoteEditorView: View {
     private func saveNote() {
         let trimmedText = noteText.trimmingCharacters(in: .whitespaces)
         guard !trimmedText.isEmpty else { return }
-        
+
+        // Haptic feedback for save action
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(.success)
+
         if let existingNote = existingNote {
             // Editar nota existente
             existingNote.noteText = trimmedText
@@ -133,7 +140,7 @@ struct NoteEditorView: View {
             )
             modelContext.insert(newNote)
         }
-        
+
         do {
             try modelContext.save()
             dismiss()

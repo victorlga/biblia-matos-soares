@@ -241,8 +241,10 @@ struct ContentView: View {
                             } label: {
                                 Label(verse.isHighlighted ? "Desmarcar" : "Marcar", systemImage: verse.isHighlighted ? "bookmark.slash" : "bookmark")
                             }
-                            
+
                             Button {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
                                 noteEditorMode = .newNote(verse)
                             } label: {
                                 Label("Adicionar Nota", systemImage: "note.text")
@@ -255,6 +257,8 @@ struct ContentView: View {
                             //}
                             
                             Button {
+                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                generator.impactOccurred()
                                 shareVerse(verse)
                             } label: {
                                 Label("Compartilhar", systemImage: "square.and.arrow.up")
@@ -400,6 +404,8 @@ struct ContentView: View {
                 Spacer()
                 
                 Button {
+                    let generator = UIImpactFeedbackGenerator(style: .medium)
+                    generator.impactOccurred()
                     if speechSynthesizer.isSpeaking {
                         speechSynthesizer.stopSpeaking(at: .immediate)
                     } else {
@@ -492,6 +498,11 @@ struct ContentView: View {
     
     private func toggleHighlight(for verse: BibleVerse) {
         verse.isHighlighted.toggle()
+
+        // Haptic feedback
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+
         do {
             try modelContext.save()
         } catch {

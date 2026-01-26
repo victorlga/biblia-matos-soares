@@ -81,6 +81,8 @@ struct OnboardingView: View {
                 HStack(spacing: 20) {
                     if currentPage > 0 {
                         Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
                             withAnimation {
                                 currentPage -= 1
                             }
@@ -96,6 +98,8 @@ struct OnboardingView: View {
                     Spacer()
 
                     Button {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
                         if currentPage < features.count - 1 {
                             withAnimation {
                                 currentPage += 1
@@ -190,6 +194,8 @@ struct FeatureCard: View {
                     )
                     .contextMenu {
                         Button {
+                            let generator = UIImpactFeedbackGenerator(style: .medium)
+                            generator.impactOccurred()
                             withAnimation {
                                 isHighlighted.toggle()
                             }
@@ -197,17 +203,23 @@ struct FeatureCard: View {
                             Label(isHighlighted ? "Desmarcar" : "Marcar", systemImage: isHighlighted ? "bookmark.slash" : "bookmark")
                         }
                         Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
                             showNoteEditor = true
                         } label: {
                             Label("Adicionar Nota", systemImage: "note.text")
                         }
                         Button {
+                            let generator = UIImpactFeedbackGenerator(style: .light)
+                            generator.impactOccurred()
                             shareVerse()
                         } label: {
                             Label("Compartilhar", systemImage: "square.and.arrow.up")
                         }
                     }
                     .onLongPressGesture(minimumDuration: 0.5) {
+                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                        generator.impactOccurred()
                         withAnimation {
                             isHighlighted.toggle()
                         }

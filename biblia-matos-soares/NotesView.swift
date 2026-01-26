@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import UIKit
 
 // Estrutura auxiliar para agrupar notas por capítulo
 struct GroupedNoteChapter: Identifiable {
@@ -99,6 +100,8 @@ struct NotesView: View {
                 // Barra superior
                 HStack {
                     Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
@@ -176,24 +179,32 @@ struct NotesView: View {
                                             )
                                             .contextMenu {
                                                 Button {
+                                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                                    generator.impactOccurred()
                                                     openVerse(note)
                                                 } label: {
                                                     Label("Abrir Versículo", systemImage: "book.open")
                                                 }
-                                                
+
                                                 Button {
+                                                    let generator = UIImpactFeedbackGenerator(style: .light)
+                                                    generator.impactOccurred()
                                                     noteToEdit = note
                                                 } label: {
                                                     Label("Editar", systemImage: "pencil")
                                                 }
-                                                
+
                                                 Button(role: .destructive) {
+                                                    let generator = UINotificationFeedbackGenerator()
+                                                    generator.notificationOccurred(.warning)
                                                     deleteNote(note)
                                                 } label: {
                                                     Label("Excluir", systemImage: "trash")
                                                 }
                                             }
                                             .onTapGesture {
+                                                let generator = UIImpactFeedbackGenerator(style: .light)
+                                                generator.impactOccurred()
                                                 noteToEdit = note
                                             }
                                         }
