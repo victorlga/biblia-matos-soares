@@ -20,9 +20,11 @@ struct ContentView: View {
     @AppStorage("readingHistory") private var readingHistoryData: Data = Data()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
     @AppStorage("fontSize") private var fontSize: Double = 17.0 // Default system font size
+    @AppStorage("hapticFeedbackEnabled") private var hapticFeedbackEnabled: Bool = true // Default ON
 
     @State private var showOnboarding: Bool = false
     @State private var showFontSizeSlider: Bool = false
+    @State private var showSettings: Bool = false
 
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
@@ -220,6 +222,11 @@ struct ContentView: View {
                         NoteEditorView(existingNote: note)
                     }
                 }
+                .sheet(isPresented: $showSettings) {
+                    SettingsView(hapticFeedbackEnabled: $hapticFeedbackEnabled)
+                        .presentationDetents([.height(260)])
+                        .presentationDragIndicator(.visible)
+                }
             }
         }
     }
@@ -259,22 +266,20 @@ struct ContentView: View {
                             }
 
                             Button {
-                                let generator = UIImpactFeedbackGenerator(style: .light)
-                                generator.impactOccurred()
+                                performHaptic(style: .light)
                                 noteEditorMode = .newNote(verse)
                             } label: {
                                 Label("Adicionar Nota", systemImage: "note.text")
                             }
-                            
+
                             //Button {
                             //    copyVerseReference(verse)
                             //} label: {
                             //    Label("Copiar Referência", systemImage: "doc.on.doc")
                             //}
-                            
+
                             Button {
-                                let generator = UIImpactFeedbackGenerator(style: .light)
-                                generator.impactOccurred()
+                                performHaptic(style: .light)
                                 shareVerse(verse)
                             } label: {
                                 Label("Compartilhar", systemImage: "square.and.arrow.up")
@@ -422,8 +427,7 @@ struct ContentView: View {
 
                 // Speaker button
                 Button {
-                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                    generator.impactOccurred()
+                    performHaptic(style: .medium)
                     if speechSynthesizer.isSpeaking {
                         speechSynthesizer.stopSpeaking(at: .immediate)
                     } else {
@@ -476,54 +480,72 @@ struct ContentView: View {
         ZStack {
             if !showFontSizeSlider {
                 // Regular buttons
-                HStack(spacing: 20) {
-                    // Notes button
-                    NavigationLink {
-                        NotesView { bookName, chapterNumber in
-                            selectedBook = bookName
-                            selectedChapter = chapterNumber
-                        }
-                    } label: {
-                        Image(systemName: "note.text")
-                            .font(.system(size: 22))
-                            .foregroundColor(.white)
-                            .frame(width: 56, height: 56)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-
-                    // Bookmarks button
-                    NavigationLink {
-                        HighlightedVersesView { bookName, chapterNumber in
-                            selectedBook = bookName
-                            selectedChapter = chapterNumber
-                        }
-                    } label: {
-                        Image(systemName: "bookmark.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(.white)
-                            .frame(width: 56, height: 56)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                    }
-
-                    // Font size button
+                HStack {
+                    // Settings button (left side)
                     Button {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
-                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                            showFontSizeSlider = true
-                        }
+                        performHaptic(style: .light)
+                        showSettings = true
                     } label: {
-                        Text("Aa")
-                            .font(.system(size: 22, weight: .semibold))
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 22))
                             .foregroundColor(.white)
                             .frame(width: 56, height: 56)
                             .background(.ultraThinMaterial)
                             .clipShape(Circle())
                             .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+
+                    Spacer()
+
+                    // Right side buttons
+                    HStack(spacing: 20) {
+                        // Notes button
+                        NavigationLink {
+                            NotesView { bookName, chapterNumber in
+                                selectedBook = bookName
+                                selectedChapter = chapterNumber
+                            }
+                        } label: {
+                            Image(systemName: "note.text")
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+
+                        // Bookmarks button
+                        NavigationLink {
+                            HighlightedVersesView { bookName, chapterNumber in
+                                selectedBook = bookName
+                                selectedChapter = chapterNumber
+                            }
+                        } label: {
+                            Image(systemName: "bookmark.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+
+                        // Font size button
+                        Button {
+                            performHaptic(style: .light)
+                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                showFontSizeSlider = true
+                            }
+                        } label: {
+                            Text("Aa")
+                                .font(.system(size: 22, weight: .semibold))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
                     }
                 }
                 .transition(.scale.combined(with: .opacity))
@@ -541,8 +563,7 @@ struct ContentView: View {
         HStack(spacing: 16) {
             // Close button
             Button {
-                let generator = UIImpactFeedbackGenerator(style: .light)
-                generator.impactOccurred()
+                performHaptic(style: .light)
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     showFontSizeSlider = false
                 }
@@ -565,8 +586,7 @@ struct ContentView: View {
                 step: 2,
                 onEditingChanged: { editing in
                     if !editing {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
+                        performHaptic(style: .light)
                     }
                 }
             )
@@ -592,12 +612,21 @@ struct ContentView: View {
         speechSynthesizer.speak(utterance)
     }
     
+    private func performHaptic(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        guard hapticFeedbackEnabled else { return }
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+
+    private func performHapticNotification(type: UINotificationFeedbackGenerator.FeedbackType) {
+        guard hapticFeedbackEnabled else { return }
+        let generator = UINotificationFeedbackGenerator()
+        generator.notificationOccurred(type)
+    }
+
     private func toggleHighlight(for verse: BibleVerse) {
         verse.isHighlighted.toggle()
-
-        // Haptic feedback
-        let generator = UIImpactFeedbackGenerator(style: .medium)
-        generator.impactOccurred()
+        performHaptic(style: .medium)
 
         do {
             try modelContext.save()
@@ -609,10 +638,7 @@ struct ContentView: View {
     private func copyVerseReference(_ verse: BibleVerse) {
         let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
         UIPasteboard.general.string = reference
-        
-        // Haptic feedback
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+        performHapticNotification(type: .success)
     }
     
     private func shareVerse(_ verse: BibleVerse) {
@@ -661,6 +687,132 @@ struct ContentView: View {
             )
         case .none:
             return .identity
+        }
+    }
+}
+
+// MARK: - Settings View
+struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
+    @Binding var hapticFeedbackEnabled: Bool
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 0) {
+                    // Haptic feedback toggle
+                    settingsRow(
+                        icon: "hand.tap.fill",
+                        title: "Feedback tátil",
+                        showToggle: true
+                    )
+
+                    Divider()
+                        .background(Color.gray.opacity(0.3))
+                        .padding(.horizontal)
+
+                    // Send feedback
+                    Button {
+                        sendFeedback()
+                    } label: {
+                        settingsRow(
+                            icon: "bubble.left.and.bubble.right.fill",
+                            title: "Enviar feedback"
+                        )
+                    }
+
+                    Divider()
+                        .background(Color.gray.opacity(0.3))
+                        .padding(.horizontal)
+
+                    // Rate on App Store
+                    Button {
+                        rateOnAppStore()
+                    } label: {
+                        settingsRow(
+                            icon: "star.fill",
+                            title: "Avaliar na App Store"
+                        )
+                    }
+
+                Spacer()
+            }
+            .padding(.top, 20)
+            .navigationTitle("Configurações")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button {
+                        performHaptic(style: .light)
+                        dismiss()
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(.white)
+                    }
+                }
+            }
+            .preferredColorScheme(.dark)
+        }
+        .presentationBackground(.ultraThinMaterial)
+    }
+
+    private func performHaptic(style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        guard hapticFeedbackEnabled else { return }
+        let generator = UIImpactFeedbackGenerator(style: style)
+        generator.impactOccurred()
+    }
+
+    @ViewBuilder
+    private func settingsRow(
+        icon: String,
+        title: String,
+        showToggle: Bool = false
+    ) -> some View {
+        HStack(spacing: 16) {
+            Image(systemName: icon)
+                .font(.system(size: 20))
+                .foregroundColor(.white)
+                .frame(width: 28)
+
+            Text(title)
+                .font(.system(size: 17, design: .default))
+                .foregroundColor(.white)
+
+            Spacer()
+
+            if showToggle {
+                Toggle("", isOn: $hapticFeedbackEnabled)
+                    .labelsHidden()
+                    .tint(.green)
+            } else {
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 14))
+                    .foregroundColor(.gray)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
+        .contentShape(Rectangle())
+    }
+
+    private func sendFeedback() {
+        performHaptic(style: .light)
+
+        // Replace with your Google Form URL
+        let googleFormURL = "https://forms.gle/YOUR_FORM_ID"
+
+        if let url = URL(string: googleFormURL) {
+            UIApplication.shared.open(url)
+        }
+    }
+
+    private func rateOnAppStore() {
+        performHaptic(style: .light)
+
+        // Replace with your App Store ID
+        if let url = URL(string: "https://apps.apple.com/app/idYOUR_APP_ID?action=write-review") {
+            UIApplication.shared.open(url)
         }
     }
 }
