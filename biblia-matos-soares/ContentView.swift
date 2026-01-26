@@ -3,6 +3,17 @@ import SwiftData
 import AVFoundation
 import UIKit
 
+// View extension for conditional modifiers
+extension View {
+    @ViewBuilder func `if`<Content: View>(_ condition: Bool, transform: (Self) -> Content) -> some View {
+        if condition {
+            transform(self)
+        } else {
+            self
+        }
+    }
+}
+
 struct ContentView: View {
     @AppStorage("lastSelectedBook") private var storedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @AppStorage("lastSelectedChapter") private var storedChapter: Int = 1
@@ -105,7 +116,7 @@ struct ContentView: View {
                                     }
 
                                     Color.clear
-                                        .frame(height: geometry.size.height * 0.1)
+                                        .frame(height: 120)
                                 }
                                 .padding(.top, geometry.size.height * 0.02)
                                 .transition(currentTransition)
@@ -172,6 +183,13 @@ struct ContentView: View {
                             }
                         }
                     }
+
+                    // Floating action buttons at the bottom
+                    VStack {
+                        Spacer()
+                        floatingActionButtons()
+                    }
+                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? 0 : 16)
                 }
                 .preferredColorScheme(.dark)
                 .onAppear {
@@ -350,7 +368,8 @@ struct ContentView: View {
 
     private func headerView(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
-            HStack {
+            HStack(spacing: geometry.size.width * 0.02) {
+                // Book selector
                 Menu {
                     ForEach(BibleData.orderedBookNames, id: \.self) { book in
                         Button(book) {
@@ -362,13 +381,12 @@ struct ContentView: View {
                         Text(selectedBook)
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
-                            .lineLimit(1) // Ensures the book name is on a single line
-                            .truncationMode(.tail) // Truncates if needed
+                            .lineLimit(1)
                         Image(systemName: "chevron.down")
-                            .font(.system(size: headerFontSize * 0.7))
+                            .font(.system(size: headerFontSize * 0.6))
                             .foregroundColor(.secondary)
                     }
-                    .padding(.horizontal, geometry.size.width * 0.04)
+                    .padding(.horizontal, geometry.size.width * 0.03)
                     .padding(.vertical, geometry.size.height * 0.01)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
@@ -376,6 +394,7 @@ struct ContentView: View {
                     )
                 }
 
+                // Chapter selector
                 Menu {
                     ForEach(1..<(BibleData.numberOfChapters(forBook: selectedBook) ?? 1) + 1, id: \.self) { chapter in
                         Button("Capítulo \(chapter)") {
@@ -383,26 +402,27 @@ struct ContentView: View {
                         }
                     }
                 } label: {
-                    HStack {
-                        Text("\(selectedChapter)")
+                    HStack(spacing: 4) {
+                        Text("Cap. \(selectedChapter)")
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
-                            .lineLimit(1)
-                            .minimumScaleFactor(0.5)
                         Image(systemName: "chevron.down")
-                            .font(.system(size: headerFontSize * 0.7))
+                            .font(.system(size: headerFontSize * 0.6))
                             .foregroundColor(.secondary)
                     }
-                    .padding(.horizontal, geometry.size.width * 0.04)
+                    .padding(.horizontal, geometry.size.width * 0.03)
                     .padding(.vertical, geometry.size.height * 0.01)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color(.systemGray6))
                     )
                 }
-                
+                .fixedSize()
+
+                // Spacer between selectors and action buttons
                 Spacer()
-                
+
+                // Speaker button
                 Button {
                     let generator = UIImpactFeedbackGenerator(style: .medium)
                     generator.impactOccurred()
@@ -412,71 +432,36 @@ struct ContentView: View {
                         readCurrentChapter()
                     }
                 } label: {
-                    Image(systemName: "speaker.wave.2.fill")
-                        .font(.system(size: headerFontSize * 0.8))
+                    Image(systemName: speechSynthesizer.isSpeaking ? "stop.fill" : "speaker.wave.2.fill")
+                        .font(.system(size: headerFontSize * 0.7))
                         .foregroundColor(.white)
-                        .frame(height: geometry.size.height * 0.045)
-                        .padding(.horizontal, geometry.size.width * 0.04)
+                        .frame(width: 36, height: 36)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(.systemGray6))
                         )
                 }
 
+                // Search button
                 NavigationLink {
                     SearchView { bookName, chapterNumber in
-                        // Callback para navegar para o versículo específico
                         selectedBook = bookName
                         selectedChapter = chapterNumber
                     }
                 } label: {
                     Image(systemName: "magnifyingglass")
-                        .font(.system(size: headerFontSize * 0.8))
+                        .font(.system(size: headerFontSize * 0.7))
                         .foregroundColor(.white)
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.systemGray6))
-                        )
-                }
-                
-                NavigationLink {
-                    NotesView { bookName, chapterNumber in
-                        // Callback para navegar para o versículo específico
-                        selectedBook = bookName
-                        selectedChapter = chapterNumber
-                    }
-                } label: {
-                    Image(systemName: "note.text")
-                        .font(.system(size: headerFontSize * 0.8))
-                        .foregroundColor(.white)
-                        .padding(8)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color(.systemGray6))
-                        )
-                }
-                
-                NavigationLink {
-                    HighlightedVersesView { bookName, chapterNumber in
-                        // Callback para navegar para o versículo específico
-                        selectedBook = bookName
-                        selectedChapter = chapterNumber
-                    }
-                } label: {
-                    Image(systemName: "bookmark.fill")
-                        .font(.system(size: headerFontSize * 0.8))
-                        .foregroundColor(.white)
-                        .padding(8)
+                        .frame(width: 36, height: 36)
                         .background(
                             RoundedRectangle(cornerRadius: 8)
                                 .fill(Color(.systemGray6))
                         )
                 }
             }
-            .padding(.horizontal, geometry.size.width * 0.05)
+            .padding(.horizontal, geometry.size.width * 0.04)
             .padding(.top, geometry.size.height * 0.01)
-            .padding(.bottom, geometry.size.height * 0.015)
+            .padding(.bottom, geometry.size.height * 0.01)
             .background(
                 Color.black
                     .overlay(
@@ -487,6 +472,44 @@ struct ContentView: View {
                     )
             )
         }
+    }
+
+    private func floatingActionButtons() -> some View {
+        HStack(spacing: 20) {
+            // Notes button
+            NavigationLink {
+                NotesView { bookName, chapterNumber in
+                    selectedBook = bookName
+                    selectedChapter = chapterNumber
+                }
+            } label: {
+                Image(systemName: "note.text")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+
+            // Bookmarks button
+            NavigationLink {
+                HighlightedVersesView { bookName, chapterNumber in
+                    selectedBook = bookName
+                    selectedChapter = chapterNumber
+                }
+            } label: {
+                Image(systemName: "bookmark.fill")
+                    .font(.system(size: 22))
+                    .foregroundColor(.white)
+                    .frame(width: 56, height: 56)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
     }
     
     private func readCurrentChapter() {
