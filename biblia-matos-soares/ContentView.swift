@@ -19,8 +19,10 @@ struct ContentView: View {
     @AppStorage("lastSelectedChapter") private var storedChapter: Int = 1
     @AppStorage("readingHistory") private var readingHistoryData: Data = Data()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
+    @AppStorage("fontSize") private var fontSize: Double = 17.0 // Default system font size
 
     @State private var showOnboarding: Bool = false
+    @State private var showFontSizeSlider: Bool = false
 
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
@@ -51,11 +53,7 @@ struct ContentView: View {
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     private var verseFontSize: CGFloat {
-        switch horizontalSizeClass {
-        case .compact: return 24
-        case .regular: return 34
-        default: return 24
-        }
+        CGFloat(fontSize)
     }
 
     private var verseNumberFontSize: CGFloat {
@@ -475,41 +473,116 @@ struct ContentView: View {
     }
 
     private func floatingActionButtons() -> some View {
-        HStack(spacing: 20) {
-            // Notes button
-            NavigationLink {
-                NotesView { bookName, chapterNumber in
-                    selectedBook = bookName
-                    selectedChapter = chapterNumber
+        ZStack {
+            if !showFontSizeSlider {
+                // Regular buttons
+                HStack(spacing: 20) {
+                    // Notes button
+                    NavigationLink {
+                        NotesView { bookName, chapterNumber in
+                            selectedBook = bookName
+                            selectedChapter = chapterNumber
+                        }
+                    } label: {
+                        Image(systemName: "note.text")
+                            .font(.system(size: 22))
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+
+                    // Bookmarks button
+                    NavigationLink {
+                        HighlightedVersesView { bookName, chapterNumber in
+                            selectedBook = bookName
+                            selectedChapter = chapterNumber
+                        }
+                    } label: {
+                        Image(systemName: "bookmark.fill")
+                            .font(.system(size: 22))
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+
+                    // Font size button
+                    Button {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            showFontSizeSlider = true
+                        }
+                    } label: {
+                        Text("Aa")
+                            .font(.system(size: 22, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(width: 56, height: 56)
+                            .background(.ultraThinMaterial)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    }
+                }
+                .transition(.scale.combined(with: .opacity))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 16)
+            } else {
+                // Font size slider
+                fontSizeSlider()
+                    .transition(.scale.combined(with: .opacity))
+            }
+        }
+    }
+
+    private func fontSizeSlider() -> some View {
+        HStack(spacing: 16) {
+            // Close button
+            Button {
+                let generator = UIImpactFeedbackGenerator(style: .light)
+                generator.impactOccurred()
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    showFontSizeSlider = false
                 }
             } label: {
-                Image(systemName: "note.text")
-                    .font(.system(size: 22))
+                Image(systemName: "xmark")
+                    .font(.system(size: 18, weight: .semibold))
                     .foregroundColor(.white)
-                    .frame(width: 56, height: 56)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    .frame(width: 44, height: 44)
             }
 
-            // Bookmarks button
-            NavigationLink {
-                HighlightedVersesView { bookName, chapterNumber in
-                    selectedBook = bookName
-                    selectedChapter = chapterNumber
+            // Smaller A
+            Text("A")
+                .font(.system(size: 16))
+                .foregroundColor(.white.opacity(0.8))
+
+            // Slider
+            Slider(
+                value: $fontSize,
+                in: 15...31,
+                step: 2,
+                onEditingChanged: { editing in
+                    if !editing {
+                        let generator = UIImpactFeedbackGenerator(style: .light)
+                        generator.impactOccurred()
+                    }
                 }
-            } label: {
-                Image(systemName: "bookmark.fill")
-                    .font(.system(size: 22))
-                    .foregroundColor(.white)
-                    .frame(width: 56, height: 56)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-            }
+            )
+            .accentColor(.white)
+
+            // Larger A
+            Text("A")
+                .font(.system(size: 26, weight: .semibold))
+                .foregroundColor(.white)
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 16)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 28))
+        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+        .padding(.horizontal, 24)
     }
     
     private func readCurrentChapter() {
