@@ -7,6 +7,9 @@ struct ContentView: View {
     @AppStorage("lastSelectedBook") private var storedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @AppStorage("lastSelectedChapter") private var storedChapter: Int = 1
     @AppStorage("readingHistory") private var readingHistoryData: Data = Data()
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
+
+    @State private var showOnboarding: Bool = false
 
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
@@ -175,12 +178,23 @@ struct ContentView: View {
                     selectedBook = storedBook
                     selectedChapter = storedChapter
                     updateReadingHistory()
+
+                    // Show onboarding on first launch
+                    if !hasSeenOnboarding {
+                        showOnboarding = true
+                    }
                 }
                 .onChange(of: importStatus.isImportComplete) { _, isComplete in
                     if isComplete {
                         // Trigger a refresh to load verses after import completes
                         refreshTrigger = UUID()
                     }
+                }
+                .fullScreenCover(isPresented: $showOnboarding) {
+                    OnboardingView(isPresented: $showOnboarding)
+                        .onDisappear {
+                            hasSeenOnboarding = true
+                        }
                 }
                 .sheet(item: $noteEditorMode) { mode in
                     switch mode {
