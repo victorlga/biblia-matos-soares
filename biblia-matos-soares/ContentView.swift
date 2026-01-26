@@ -15,9 +15,19 @@ struct ContentView: View {
     @State private var currentTranslationDirection: HorizontalTransitionDirection = .none
     
     @State private var speechSynthesizer = AVSpeechSynthesizer()
-    @State private var showingNoteEditor = false
-    @State private var verseForNote: BibleVerse?
-    @State private var noteToEdit: VerseNote?
+    @State private var noteEditorMode: NoteEditorMode?
+
+    enum NoteEditorMode: Identifiable {
+        case newNote(BibleVerse)
+        case editNote(VerseNote)
+
+        var id: String {
+            switch self {
+            case .newNote(let verse): return "new-\(verse.id)"
+            case .editNote(let note): return "edit-\(note.id)"
+            }
+        }
+    }
 
     @Environment(\.modelContext) private var modelContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
@@ -162,11 +172,12 @@ struct ContentView: View {
                     selectedChapter = storedChapter
                     updateReadingHistory()
                 }
-                .sheet(isPresented: $showingNoteEditor) {
-                    if let note = noteToEdit {
-                        NoteEditorView(existingNote: note)
-                    } else if let verse = verseForNote {
+                .sheet(item: $noteEditorMode) { mode in
+                    switch mode {
+                    case .newNote(let verse):
                         NoteEditorView(verse: verse)
+                    case .editNote(let note):
+                        NoteEditorView(existingNote: note)
                     }
                 }
             }
@@ -208,9 +219,7 @@ struct ContentView: View {
                             }
                             
                             Button {
-                                verseForNote = verse
-                                noteToEdit = nil
-                                showingNoteEditor = true
+                                noteEditorMode = .newNote(verse)
                             } label: {
                                 Label("Adicionar Nota", systemImage: "note.text")
                             }

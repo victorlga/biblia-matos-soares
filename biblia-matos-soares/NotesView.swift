@@ -17,7 +17,6 @@ struct NotesView: View {
     @Query private var allNotes: [VerseNote]
     
     @State private var noteToEdit: VerseNote?
-    @State private var showingNoteEditor = false
     
     // Callback para navegar para um versículo específico no ContentView
     var onNavigateToVerse: ((String, Int) -> Void)?
@@ -184,7 +183,6 @@ struct NotesView: View {
                                                 
                                                 Button {
                                                     noteToEdit = note
-                                                    showingNoteEditor = true
                                                 } label: {
                                                     Label("Editar", systemImage: "pencil")
                                                 }
@@ -197,7 +195,6 @@ struct NotesView: View {
                                             }
                                             .onTapGesture {
                                                 noteToEdit = note
-                                                showingNoteEditor = true
                                             }
                                         }
                                     }
@@ -213,10 +210,8 @@ struct NotesView: View {
         }
         .preferredColorScheme(.dark)
         .navigationBarBackButtonHidden(true)
-        .sheet(isPresented: $showingNoteEditor) {
-            if let note = noteToEdit {
-                NoteEditorView(existingNote: note)
-            }
+        .sheet(item: $noteToEdit) { note in
+            NoteEditorView(existingNote: note)
         }
     }
     
