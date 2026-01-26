@@ -16,6 +16,9 @@ struct ContentView: View {
     
     @State private var speechSynthesizer = AVSpeechSynthesizer()
     @State private var noteEditorMode: NoteEditorMode?
+    @State private var refreshTrigger = UUID()
+
+    @EnvironmentObject private var importStatus: ImportStatus
 
     enum NoteEditorMode: Identifiable {
         case newNote(BibleVerse)
@@ -92,7 +95,7 @@ struct ContentView: View {
                                                     .foregroundColor(.gray)
                                                     .multilineTextAlignment(.center)
                                                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                            
+
                                     } else {
                                         // Renderizar versículos com destaque contínuo
                                         versesWithContinuousHighlight(geometry: geometry)
@@ -104,6 +107,7 @@ struct ContentView: View {
                                 .padding(.top, geometry.size.height * 0.02)
                                 .transition(currentTransition)
                             }
+                            .id(refreshTrigger)
                             .contentShape(Rectangle())
                             .gesture(
                                 DragGesture()
@@ -171,6 +175,12 @@ struct ContentView: View {
                     selectedBook = storedBook
                     selectedChapter = storedChapter
                     updateReadingHistory()
+                }
+                .onChange(of: importStatus.isImportComplete) { _, isComplete in
+                    if isComplete {
+                        // Trigger a refresh to load verses after import completes
+                        refreshTrigger = UUID()
+                    }
                 }
                 .sheet(item: $noteEditorMode) { mode in
                     switch mode {

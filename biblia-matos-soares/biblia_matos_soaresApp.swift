@@ -4,6 +4,12 @@ import FirebaseCore
 import FirebaseMessaging
 import UserNotifications
 
+// MARK: - Import Status Observable
+@MainActor
+class ImportStatus: ObservableObject {
+    @Published var isImportComplete: Bool = false
+}
+
 // MARK: - AppDelegate for Firebase + Push Notifications
 class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate, MessagingDelegate {
     func application(_ application: UIApplication,
@@ -48,7 +54,10 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
 struct biblia_matos_soaresApp: App {
     // Register AppDelegate for Firebase
     @UIApplicationDelegateAdaptor(AppDelegate.self) var delegate
-    
+
+    // Import status to signal when Bible data is ready
+    @StateObject private var importStatus = ImportStatus()
+
     // SwiftData container
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
@@ -67,10 +76,11 @@ struct biblia_matos_soaresApp: App {
         WindowGroup {
             ContentView()
                 .modelContext(sharedModelContainer.mainContext)
+                .environmentObject(importStatus)
                 .task {
                     let context = sharedModelContainer.mainContext
                     let importer = BibleImporter(context: context)
-                    
+
                     if !(await importer.hasImportedData()) {
                         print("📖 Importing Bible for the first time…")
                         await importer.importBible()
@@ -78,6 +88,9 @@ struct biblia_matos_soaresApp: App {
                         print("✅ Bible already imported.")
                         print("Total verses: \(await importer.countVerses())")
                     }
+
+                    // Signal that import is complete (or data was already present)
+                    importStatus.isImportComplete = true
                 }
         }
         .modelContainer(sharedModelContainer)
