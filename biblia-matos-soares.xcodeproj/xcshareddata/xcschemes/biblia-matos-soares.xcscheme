@@ -16,7 +16,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "5776D2242DF9022600CFDACC"
-               BuildableName = "biblia-matos-soares.app"
+               BuildableName = "Bi&#x301;blia Matos Soares.app"
                BlueprintName = "biblia-matos-soares"
                ReferencedContainer = "container:biblia-matos-soares.xcodeproj">
             </BuildableReference>
@@ -45,7 +45,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "5776D2242DF9022600CFDACC"
-            BuildableName = "biblia-matos-soares.app"
+            BuildableName = "Bi&#x301;blia Matos Soares.app"
             BlueprintName = "biblia-matos-soares"
             ReferencedContainer = "container:biblia-matos-soares.xcodeproj">
          </BuildableReference>
@@ -62,7 +62,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "5776D2242DF9022600CFDACC"
-            BuildableName = "biblia-matos-soares.app"
+            BuildableName = "Bi&#x301;blia Matos Soares.app"
             BlueprintName = "biblia-matos-soares"
             ReferencedContainer = "container:biblia-matos-soares.xcodeproj">
          </BuildableReference>
