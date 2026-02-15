@@ -681,8 +681,12 @@ struct ContentView: View {
 
 // MARK: - Settings View
 struct SettingsView: View {
+    private static let genericOpenErrorMessage = "Desculpe, não foi possível abrir o link."
+
     @Environment(\.dismiss) private var dismiss
     @Binding var hapticFeedbackEnabled: Bool
+    @State private var showURLErrorAlert = false
+    @State private var urlErrorMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -743,6 +747,11 @@ struct SettingsView: View {
             .preferredColorScheme(.dark)
         }
         .presentationBackground(.ultraThinMaterial)
+        .alert("Não foi possível abrir o link", isPresented: $showURLErrorAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(urlErrorMessage)
+        }
     }
 
     @ViewBuilder
@@ -784,17 +793,35 @@ struct SettingsView: View {
         let googleFormURL = "https://forms.gle/YOUR_FORM_ID"
 
         if let url = URL(string: googleFormURL) {
-            UIApplication.shared.open(url)
+            openExternalURL(url)
         }
     }
 
     private func rateOnAppStore() {
-        performHaptic(style: .light)
+        HapticManager.shared.impact(style: .light)
 
-        // Replace with your App Store ID
-        if let url = URL(string: "https://apps.apple.com/app/idYOUR_APP_ID?action=write-review") {
-            UIApplication.shared.open(url)
+        if let url = AppConfig.appStoreReviewURL {
+            openExternalURL(url)
         }
     }
-}
 
+    private func openExternalURL(_ url: URL) {
+        guard UIApplication.shared.canOpenURL(url) else {
+            presentURLError()
+            return
+        }
+
+        UIApplication.shared.open(url, options: [:]) { success in
+            guard !success else { return }
+            DispatchQueue.main.async {
+                presentURLError()
+            }
+        }
+    }
+
+    private func presentURLError() {
+        urlErrorMessage = Self.genericOpenErrorMessage
+        showURLErrorAlert = true
+        HapticManager.shared.notification(type: .error)
+    }
+}
