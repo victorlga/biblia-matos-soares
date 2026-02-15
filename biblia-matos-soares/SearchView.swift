@@ -41,8 +41,7 @@ struct SearchView: View {
                 // Barra superior
                 HStack {
                     Button {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
+                        HapticManager.shared.impact(style: .light)
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
@@ -84,8 +83,7 @@ struct SearchView: View {
                     
                     if !searchText.isEmpty {
                         Button {
-                            let generator = UIImpactFeedbackGenerator(style: .light)
-                            generator.impactOccurred()
+                            HapticManager.shared.impact(style: .light)
                             searchText = ""
                             searchResults = []
                         } label: {
@@ -144,8 +142,7 @@ struct SearchView: View {
                                         .fill(Color(.systemGray6))
                                 )
                                 .onTapGesture {
-                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                    generator.impactOccurred()
+                                    HapticManager.shared.impact(style: .light)
                                     openVerse(verse)
                                 }
                             }

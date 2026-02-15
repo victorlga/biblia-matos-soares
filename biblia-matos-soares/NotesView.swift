@@ -100,8 +100,7 @@ struct NotesView: View {
                 // Barra superior
                 HStack {
                     Button {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
+                        HapticManager.shared.impact(style: .light)
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
@@ -179,32 +178,28 @@ struct NotesView: View {
                                             )
                                             .contextMenu {
                                                 Button {
-                                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                                    generator.impactOccurred()
+                                                    HapticManager.shared.impact(style: .light)
                                                     openVerse(note)
                                                 } label: {
                                                     Label("Abrir Versículo", systemImage: "book.open")
                                                 }
 
                                                 Button {
-                                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                                    generator.impactOccurred()
+                                                    HapticManager.shared.impact(style: .light)
                                                     noteToEdit = note
                                                 } label: {
                                                     Label("Editar", systemImage: "pencil")
                                                 }
 
                                                 Button(role: .destructive) {
-                                                    let generator = UINotificationFeedbackGenerator()
-                                                    generator.notificationOccurred(.warning)
+                                                    HapticManager.shared.notification(type: .warning)
                                                     deleteNote(note)
                                                 } label: {
                                                     Label("Excluir", systemImage: "trash")
                                                 }
                                             }
                                             .onTapGesture {
-                                                let generator = UIImpactFeedbackGenerator(style: .light)
-                                                generator.impactOccurred()
+                                                HapticManager.shared.impact(style: .light)
                                                 noteToEdit = note
                                             }
                                         }

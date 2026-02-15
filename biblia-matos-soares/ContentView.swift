@@ -266,7 +266,7 @@ struct ContentView: View {
                             }
 
                             Button {
-                                performHaptic(style: .light)
+                                HapticManager.shared.impact(style: .light)
                                 noteEditorMode = .newNote(verse)
                             } label: {
                                 Label("Adicionar Nota", systemImage: "note.text")
@@ -279,7 +279,7 @@ struct ContentView: View {
                             //}
 
                             Button {
-                                performHaptic(style: .light)
+                                HapticManager.shared.impact(style: .light)
                                 shareVerse(verse)
                             } label: {
                                 Label("Compartilhar", systemImage: "square.and.arrow.up")
@@ -427,7 +427,7 @@ struct ContentView: View {
 
                 // Speaker button
                 Button {
-                    performHaptic(style: .medium)
+                    HapticManager.shared.impact(style: .medium)
                     if speechSynthesizer.isSpeaking {
                         speechSynthesizer.stopSpeaking(at: .immediate)
                     } else {
@@ -483,7 +483,7 @@ struct ContentView: View {
                 HStack {
                     // Settings button (left side)
                     Button {
-                        performHaptic(style: .light)
+                        HapticManager.shared.impact(style: .light)
                         showSettings = true
                     } label: {
                         Image(systemName: "gearshape.fill")
@@ -533,7 +533,7 @@ struct ContentView: View {
 
                         // Font size button
                         Button {
-                            performHaptic(style: .light)
+                            HapticManager.shared.impact(style: .light)
                             withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                 showFontSizeSlider = true
                             }
@@ -563,7 +563,7 @@ struct ContentView: View {
         HStack(spacing: 16) {
             // Close button
             Button {
-                performHaptic(style: .light)
+                HapticManager.shared.impact(style: .light)
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                     showFontSizeSlider = false
                 }
@@ -586,7 +586,7 @@ struct ContentView: View {
                 step: 2,
                 onEditingChanged: { editing in
                     if !editing {
-                        performHaptic(style: .light)
+                        HapticManager.shared.impact(style: .light)
                     }
                 }
             )
@@ -612,21 +612,9 @@ struct ContentView: View {
         speechSynthesizer.speak(utterance)
     }
     
-    private func performHaptic(style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        guard hapticFeedbackEnabled else { return }
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.impactOccurred()
-    }
-
-    private func performHapticNotification(type: UINotificationFeedbackGenerator.FeedbackType) {
-        guard hapticFeedbackEnabled else { return }
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(type)
-    }
-
     private func toggleHighlight(for verse: BibleVerse) {
         verse.isHighlighted.toggle()
-        performHaptic(style: .medium)
+        HapticManager.shared.impact(style: .medium)
 
         do {
             try modelContext.save()
@@ -638,7 +626,7 @@ struct ContentView: View {
     private func copyVerseReference(_ verse: BibleVerse) {
         let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
         UIPasteboard.general.string = reference
-        performHapticNotification(type: .success)
+        HapticManager.shared.notification(type: .success)
     }
     
     private func shareVerse(_ verse: BibleVerse) {
@@ -743,7 +731,7 @@ struct SettingsView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
-                        performHaptic(style: .light)
+                        HapticManager.shared.impact(style: .light)
                         dismiss()
                     } label: {
                         Image(systemName: "xmark")
@@ -755,12 +743,6 @@ struct SettingsView: View {
             .preferredColorScheme(.dark)
         }
         .presentationBackground(.ultraThinMaterial)
-    }
-
-    private func performHaptic(style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        guard hapticFeedbackEnabled else { return }
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.impactOccurred()
     }
 
     @ViewBuilder
@@ -797,9 +779,8 @@ struct SettingsView: View {
     }
 
     private func sendFeedback() {
-        performHaptic(style: .light)
+        HapticManager.shared.impact(style: .light)
 
-        // Replace with your Google Form URL
         let googleFormURL = "https://forms.gle/YOUR_FORM_ID"
 
         if let url = URL(string: googleFormURL) {
