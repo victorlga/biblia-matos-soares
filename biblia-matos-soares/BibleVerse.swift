@@ -3,6 +3,8 @@ import SwiftData
 
 @Model
 final class BibleVerse {
+    #Index<BibleVerse>([\.bookName, \.chapterNumber, \.verseNumber])
+
     var bookName: String
     var chapterNumber: Int
     var verseNumber: Int
