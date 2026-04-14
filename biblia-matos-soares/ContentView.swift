@@ -18,6 +18,7 @@ struct ContentView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
     @AppStorage("fontSize") private var fontSize: Double = 17.0
     @AppStorage("hapticFeedbackEnabled") private var hapticFeedbackEnabled: Bool = true
+    @AppStorage("speechRate") private var speechRate: Double = 0.48
 
     @State private var viewModel = ContentViewModel()
 
@@ -229,7 +230,7 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showSettings) {
                     SettingsView(hapticFeedbackEnabled: $hapticFeedbackEnabled)
-                        .presentationDetents([.height(260)])
+                        .presentationDetents([.height(420)])
                         .presentationDragIndicator(.visible)
                 }
                 .sheet(isPresented: $showBookPicker) {
@@ -393,7 +394,7 @@ struct ContentView: View {
                     if viewModel.speechSynthesizer.isSpeaking {
                         viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                     } else {
-                        viewModel.readCurrentChapter(verses: verses)
+                        viewModel.readCurrentChapter(verses: verses, rate: Float(speechRate))
                     }
                 } label: {
                     Image(systemName: viewModel.speechSynthesizer.isSpeaking ? "stop.fill" : "speaker.wave.2.fill")

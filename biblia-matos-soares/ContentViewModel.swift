@@ -123,11 +123,16 @@ class ContentViewModel {
     }
 
     // MARK: - Text-to-speech
-    func readCurrentChapter(verses: [BibleVerse]) {
-        let fullChapterText = verses.map { $0.text }.joined(separator: " ")
-        let utterance = AVSpeechUtterance(string: fullChapterText)
-        utterance.voice = AVSpeechSynthesisVoice(language: "pt-BR")
-        speechSynthesizer.speak(utterance)
+    func readCurrentChapter(verses: [BibleVerse], rate: Float) {
+        let voice = SpeechHelper.bestAvailableVoice()
+        for verse in verses {
+            let utterance = AVSpeechUtterance(string: verse.text)
+            utterance.voice = voice
+            utterance.rate = rate
+            utterance.pitchMultiplier = 1.05
+            utterance.preUtteranceDelay = 0.3
+            speechSynthesizer.speak(utterance)
+        }
     }
 
     // MARK: - Highlight
