@@ -268,15 +268,11 @@ struct SearchView: View {
         let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
         guard !trimmedQuery.isEmpty else { return Text(text) }
         
-        let lowercasedText = text.lowercased()
-        let lowercasedQuery = trimmedQuery.lowercased()
-        
         var result = Text("")
         var currentIndex = text.startIndex
-        var searchStart = lowercasedText.startIndex
         
-        while searchStart < lowercasedText.endIndex {
-            guard let range = lowercasedText.range(of: lowercasedQuery, options: [.diacriticInsensitive], range: searchStart..<lowercasedText.endIndex) else {
+        while currentIndex < text.endIndex {
+            guard let range = text.range(of: trimmedQuery, options: [.caseInsensitive, .diacriticInsensitive], range: currentIndex..<text.endIndex) else {
                 break
             }
             
@@ -290,7 +286,6 @@ struct SearchView: View {
                 .bold()
             
             currentIndex = range.upperBound
-            searchStart = range.upperBound
         }
         
         // Add remaining text
