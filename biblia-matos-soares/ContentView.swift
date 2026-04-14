@@ -377,10 +377,7 @@ struct ContentView: View {
                     VStack(spacing: 0) {
                         Spacer()
                         footerBar(geometry: geometry)
-                        Color.black
-                            .frame(height: geometry.safeAreaInsets.bottom)
                     }
-                    .ignoresSafeArea(edges: .bottom)
                 }
                 .preferredColorScheme(.dark)
                 .onAppear {
