@@ -465,7 +465,7 @@ struct ContentView: View {
                 }
                 .sheet(isPresented: $showSettings) {
                     SettingsView(hapticFeedbackEnabled: $hapticFeedbackEnabled)
-                        .presentationDetents([.height(420)])
+                        .presentationDetents([.height(520)])
                         .presentationDragIndicator(.visible)
                 }
                 .sheet(isPresented: $showBookPicker) {

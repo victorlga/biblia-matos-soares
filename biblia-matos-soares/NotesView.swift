@@ -140,7 +140,7 @@ struct NotesView: View {
                                 VStack(alignment: .leading, spacing: 0) {
                                     // Header do capítulo
                                     HStack {
-                                        Text("\(group.bookName), Cap. \(group.chapterNumber)")
+                                        Text("\(group.bookName), \(String(localized: "common.chapter_abbrev")) \(group.chapterNumber)")
                                             .font(.system(size: bodyFontSize * 1.1, weight: .bold, design: .serif))
                                             .foregroundColor(.white)
                                         Spacer()
@@ -239,7 +239,7 @@ struct NotesView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.locale = .current
         return formatter.string(from: date)
     }
 }

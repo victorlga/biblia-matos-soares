@@ -54,7 +54,7 @@ struct iPadSidebarView: View {
             Spacer()
 
             if let chapters = BibleData.bookChapterCounts[book] {
-                Text("\(chapters) cap.")
+                Text("\(chapters) \(String(localized: "common.chapter_abbrev").lowercased())")
                     .font(.system(size: 12, design: .serif))
                     .foregroundColor(.secondary)
             }
