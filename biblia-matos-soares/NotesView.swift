@@ -140,7 +140,7 @@ struct NotesView: View {
                                 VStack(alignment: .leading, spacing: 0) {
                                     // Header do capítulo
                                     HStack {
-                                        Text("\(group.bookName), \(group.chapterNumber)")
+                                        Text("\(group.bookName), Cap. \(group.chapterNumber)")
                                             .font(.system(size: bodyFontSize * 1.1, weight: .bold, design: .serif))
                                             .foregroundColor(.white)
                                         Spacer()

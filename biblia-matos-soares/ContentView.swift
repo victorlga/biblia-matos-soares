@@ -379,7 +379,7 @@ struct ContentView: View {
                             }
                             .id(refreshTrigger)
                             .contentShape(Rectangle())
-                            .gesture(
+                            .simultaneousGesture(
                                 DragGesture()
                                     .onChanged { gesture in
                                         if !isDragging {
