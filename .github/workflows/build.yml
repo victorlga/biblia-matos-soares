@@ -24,10 +24,12 @@ jobs:
       - name: Install iOS Simulator runtime
         run: |
           for i in 1 2 3; do
-            xcodebuild -downloadPlatform iOS && break
+            xcodebuild -downloadPlatform iOS && exit 0
             echo "Attempt $i failed, retrying in 10s..."
             sleep 10
           done
+          echo "All attempts to download iOS simulator failed"
+          exit 1
 
       - name: Cache Swift Package Manager
         uses: actions/cache@v4

@@ -46,6 +46,8 @@ struct ContentView: View {
     @State private var isHeaderVisible: Bool = true
     @State private var lastScrollOffset: CGFloat = 0
     @State private var ignoreScrollOffsets: Bool = false
+    @State private var chapterMarkedAsRead: Bool = false
+    @State private var chapterMarkAnimating: Bool = false
 
     @EnvironmentObject private var importStatus: ImportStatus
 
@@ -199,30 +201,7 @@ struct ContentView: View {
                                                         }
 
                                                         if importStatus.isImportComplete && !verses.isEmpty {
-                                                            Button {
-                                                                HapticManager.shared.impact(style: .medium)
-                                                                ReadingProgressView.markChapterAsRead(
-                                                                    bookName: viewModel.selectedBook,
-                                                                    chapterNumber: viewModel.selectedChapter,
-                                                                    context: modelContext
-                                                                )
-                                                            } label: {
-                                                                HStack(spacing: 8) {
-                                                                    Image(systemName: "checkmark.circle")
-                                                                        .font(.system(size: 16))
-                                                                    Text("Marcar capítulo como lido")
-                                                                        .font(.system(size: 15, weight: .medium, design: .serif))
-                                                                }
-                                                                .foregroundColor(.green)
-                                                                .padding(.vertical, 12)
-                                                                .padding(.horizontal, 20)
-                                                                .background(
-                                                                    RoundedRectangle(cornerRadius: 20)
-                                                                        .stroke(Color.green.opacity(0.5), lineWidth: 1)
-                                                                )
-                                                            }
-                                                            .frame(maxWidth: .infinity)
-                                                            .padding(.top, 16)
+                                                            markAsReadButton()
                                                         }
 
                                                         Color.clear.frame(height: 120)
@@ -231,6 +210,7 @@ struct ContentView: View {
                                                 }
                                                 .id(refreshTrigger)
                                                 .onChange(of: viewModel.selectedBook) { _, _ in
+                                                    chapterMarkedAsRead = false
                                                     if viewModel.speechSynthesizer.isSpeaking {
                                                         viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                                     }
@@ -242,6 +222,7 @@ struct ContentView: View {
                                                     }
                                                 }
                                                 .onChange(of: viewModel.selectedChapter) { _, _ in
+                                                    chapterMarkedAsRead = false
                                                     if viewModel.speechSynthesizer.isSpeaking {
                                                         viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                                     }
@@ -333,30 +314,7 @@ struct ContentView: View {
 
                                     // "Mark as read" button at the bottom of the chapter
                                     if importStatus.isImportComplete && !verses.isEmpty {
-                                        Button {
-                                            HapticManager.shared.impact(style: .medium)
-                                            ReadingProgressView.markChapterAsRead(
-                                                bookName: viewModel.selectedBook,
-                                                chapterNumber: viewModel.selectedChapter,
-                                                context: modelContext
-                                            )
-                                        } label: {
-                                            HStack(spacing: 8) {
-                                                Image(systemName: "checkmark.circle")
-                                                    .font(.system(size: 16))
-                                                Text("Marcar capítulo como lido")
-                                                    .font(.system(size: 15, weight: .medium, design: .serif))
-                                            }
-                                            .foregroundColor(.green)
-                                            .padding(.vertical, 12)
-                                            .padding(.horizontal, 20)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 20)
-                                                    .stroke(Color.green.opacity(0.5), lineWidth: 1)
-                                            )
-                                        }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.top, 16)
+                                        markAsReadButton()
                                     }
 
                                     Color.clear
@@ -416,6 +374,7 @@ struct ContentView: View {
                                     }
                             )
                                             .onChange(of: viewModel.selectedBook) { _, _ in
+                                                chapterMarkedAsRead = false
                                                 if viewModel.speechSynthesizer.isSpeaking {
                                                     viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                                 }
@@ -443,6 +402,7 @@ struct ContentView: View {
                                                 }
                                             }
                             .onChange(of: viewModel.selectedChapter) { _, _ in
+                                chapterMarkedAsRead = false
                                 if viewModel.speechSynthesizer.isSpeaking {
                                     viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                 }
@@ -871,6 +831,72 @@ struct ContentView: View {
                 }
             }
         }
+    }
+
+    private func isCurrentChapterRead() -> Bool {
+        let book = viewModel.selectedBook
+        let chapter = viewModel.selectedChapter
+        do {
+            let descriptor = FetchDescriptor<ReadingProgress>(
+                predicate: #Predicate { progress in
+                    progress.bookName == book && progress.chapterNumber == chapter
+                }
+            )
+            let existing = try modelContext.fetch(descriptor)
+            return !existing.isEmpty
+        } catch {
+            return false
+        }
+    }
+
+    private func markChapterAndAnimate() {
+        ReadingProgressView.markChapterAsRead(
+            bookName: viewModel.selectedBook,
+            chapterNumber: viewModel.selectedChapter,
+            context: modelContext
+        )
+        HapticManager.shared.notification(type: .success)
+        withAnimation(.easeInOut(duration: 0.3)) {
+            chapterMarkedAsRead = true
+            chapterMarkAnimating = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                chapterMarkAnimating = false
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func markAsReadButton() -> some View {
+        let alreadyRead = chapterMarkedAsRead || isCurrentChapterRead()
+        Button {
+            if !alreadyRead {
+                markChapterAndAnimate()
+            }
+        } label: {
+            HStack(spacing: 8) {
+                Image(systemName: alreadyRead ? "checkmark.circle.fill" : "checkmark.circle")
+                    .font(.system(size: 16))
+                Text(alreadyRead ? "Capítulo lido" : "Marcar capítulo como lido")
+                    .font(.system(size: 15, weight: .medium, design: .serif))
+            }
+            .foregroundColor(alreadyRead ? .black : .green)
+            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
+            .background(
+                RoundedRectangle(cornerRadius: 20)
+                    .fill(alreadyRead ? Color.green : Color.clear)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20)
+                            .stroke(Color.green.opacity(alreadyRead ? 0 : 0.5), lineWidth: 1)
+                    )
+            )
+            .scaleEffect(chapterMarkAnimating ? 1.1 : 1.0)
+        }
+        .disabled(alreadyRead)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 16)
     }
 
     private func openNoteForVerse(_ verse: BibleVerse) {
