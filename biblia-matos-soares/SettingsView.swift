@@ -1,17 +1,25 @@
 import SwiftUI
+import SwiftData
 import UIKit
 import AVFoundation
+import UniformTypeIdentifiers
 
 // MARK: - Settings View
 struct SettingsView: View {
     private static let genericOpenErrorMessage = "Desculpe, não foi possível abrir o link."
 
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.modelContext) private var modelContext
     @Binding var hapticFeedbackEnabled: Bool
     @AppStorage("speechRate") private var speechRate: Double = 0.48
     @State private var showURLErrorAlert = false
     @State private var urlErrorMessage = ""
     @State private var showVoiceHintAlert = false
+    @State private var showImportPicker = false
+    @State private var showImportConflictAlert = false
+    @State private var pendingImportURL: URL?
+    @State private var showImportResultAlert = false
+    @State private var importResultMessage = ""
 
     var body: some View {
         NavigationStack {
@@ -50,6 +58,36 @@ struct SettingsView: View {
                             .background(Color.gray.opacity(0.3))
                             .padding(.horizontal)
                     }
+
+                    // Export data
+                    Button {
+                        HapticManager.shared.impact(style: .light)
+                        exportData()
+                    } label: {
+                        settingsRow(
+                            icon: "square.and.arrow.up",
+                            title: "Exportar notas e marcações"
+                        )
+                    }
+
+                    Divider()
+                        .background(Color.gray.opacity(0.3))
+                        .padding(.horizontal)
+
+                    // Import data
+                    Button {
+                        HapticManager.shared.impact(style: .light)
+                        showImportPicker = true
+                    } label: {
+                        settingsRow(
+                            icon: "square.and.arrow.down",
+                            title: "Importar notas e marcações"
+                        )
+                    }
+
+                    Divider()
+                        .background(Color.gray.opacity(0.3))
+                        .padding(.horizontal)
 
                     // Rate on App Store
                     Button {
@@ -91,6 +129,43 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text("Para uma voz de leitura mais natural, vá em Ajustes > Acessibilidade > Conteúdo Falado > Vozes > Português (Brasil) e baixe a voz aprimorada ou premium.")
+        }
+        .fileImporter(
+            isPresented: $showImportPicker,
+            allowedContentTypes: [.json],
+            allowsMultipleSelection: false
+        ) { result in
+            switch result {
+            case .success(let urls):
+                if let url = urls.first {
+                    pendingImportURL = url
+                    showImportConflictAlert = true
+                }
+            case .failure(let error):
+                importResultMessage = "Erro ao selecionar arquivo: \(error.localizedDescription)"
+                showImportResultAlert = true
+            }
+        }
+        .alert("Notas duplicadas", isPresented: $showImportConflictAlert) {
+            Button("Manter existentes") {
+                performImport(resolution: .keepExisting)
+            }
+            Button("Sobrescrever") {
+                performImport(resolution: .overwrite)
+            }
+            Button("Anexar") {
+                performImport(resolution: .append)
+            }
+            Button("Cancelar", role: .cancel) {
+                pendingImportURL = nil
+            }
+        } message: {
+            Text("Se já existir uma nota para o mesmo versículo, o que deseja fazer?")
+        }
+        .alert("Importação", isPresented: $showImportResultAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(importResultMessage)
         }
     }
 
@@ -156,6 +231,33 @@ struct SettingsView: View {
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
+    }
+
+    private func exportData() {
+        if let url = DataExportImportManager.exportData(context: modelContext) {
+            DataExportImportManager.presentShareSheet(for: url)
+        }
+    }
+
+    private func performImport(resolution: ImportConflictResolution) {
+        guard let url = pendingImportURL else { return }
+        defer { pendingImportURL = nil }
+
+        guard url.startAccessingSecurityScopedResource() else {
+            importResultMessage = "Não foi possível acessar o arquivo."
+            showImportResultAlert = true
+            return
+        }
+        defer { url.stopAccessingSecurityScopedResource() }
+
+        if let result = DataExportImportManager.importData(from: url, context: modelContext, noteConflict: resolution) {
+            importResultMessage = "Importação concluída: \(result.notes) nota(s) e \(result.highlights) marcação(ões) importadas."
+            HapticManager.shared.notification(type: .success)
+        } else {
+            importResultMessage = "Erro ao importar os dados. Verifique se o arquivo é válido."
+            HapticManager.shared.notification(type: .error)
+        }
+        showImportResultAlert = true
     }
 
     private func rateOnAppStore() {
