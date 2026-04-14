@@ -208,7 +208,9 @@ struct ContentView: View {
                                                     viewModel.syncBookToStorage()
                                                 }
                                                 ignoreScrollOffsets = true
-                                                isHeaderVisible = true
+                                                withAnimation(.easeOut(duration: 0.25)) {
+                                                    isHeaderVisible = true
+                                                }
                                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                                                     ignoreScrollOffsets = false
                                                 }
@@ -224,7 +226,9 @@ struct ContentView: View {
                                     viewModel.syncChapterToStorage()
                                 }
                                 ignoreScrollOffsets = true
-                                isHeaderVisible = true
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    isHeaderVisible = true
+                                }
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                                     ignoreScrollOffsets = false
                                 }
