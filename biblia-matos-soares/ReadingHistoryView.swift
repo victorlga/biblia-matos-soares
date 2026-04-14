@@ -56,7 +56,7 @@ struct ReadingHistoryView: View {
                             .foregroundColor(.white)
                     }
 
-                    Text(String(localized: "history.title"))
+                    Text("Recentes")
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
 
@@ -75,7 +75,7 @@ struct ReadingHistoryView: View {
 
                 if historyEntries.isEmpty {
                     Spacer()
-                    Text(String(localized: "history.empty"))
+                    Text("Nenhum capítulo visitado ainda.")
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)

@@ -108,7 +108,7 @@ struct NotesView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text(String(localized: "notes.title"))
+                    Text("Notas")
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -127,7 +127,7 @@ struct NotesView: View {
                 
                 if sortedNotes.isEmpty {
                     Spacer()
-                    Text(String(localized: "notes.empty"))
+                    Text("Nenhuma nota criada. Toque e segure um versículo para criar uma nota.")
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -140,7 +140,7 @@ struct NotesView: View {
                                 VStack(alignment: .leading, spacing: 0) {
                                     // Header do capítulo
                                     HStack {
-                                        Text("\(group.bookName), \(String(localized: "common.chapter_abbrev")) \(group.chapterNumber)")
+                                        Text("\(group.bookName), \(group.chapterNumber)")
                                             .font(.system(size: bodyFontSize * 1.1, weight: .bold, design: .serif))
                                             .foregroundColor(.white)
                                         Spacer()
@@ -153,7 +153,7 @@ struct NotesView: View {
                                         ForEach(group.notes) { note in
                                             VStack(alignment: .leading, spacing: 8) {
                                                 HStack {
-                                                    Text("\(String(localized: "notes.verse_label")) \(note.verseNumber)")
+                                                    Text("\("Versículo") \(note.verseNumber)")
                                                         .font(.system(size: bodyFontSize * 0.85, weight: .semibold, design: .serif))
                                                         .foregroundColor(.secondary)
                                                     
@@ -181,21 +181,21 @@ struct NotesView: View {
                                                     HapticManager.shared.impact(style: .light)
                                                     openVerse(note)
                                                 } label: {
-                                                    Label(String(localized: "notes.open_verse"), systemImage: "book.closed")
+                                                    Label("Abrir Versículo", systemImage: "book.closed")
                                                 }
 
                                                 Button {
                                                     HapticManager.shared.impact(style: .light)
                                                     noteToEdit = note
                                                 } label: {
-                                                    Label(String(localized: "common.edit"), systemImage: "pencil")
+                                                    Label("Editar", systemImage: "pencil")
                                                 }
 
                                                 Button(role: .destructive) {
                                                     HapticManager.shared.notification(type: .warning)
                                                     deleteNote(note)
                                                 } label: {
-                                                    Label(String(localized: "common.delete"), systemImage: "trash")
+                                                    Label("Excluir", systemImage: "trash")
                                                 }
                                             }
                                             .onTapGesture {

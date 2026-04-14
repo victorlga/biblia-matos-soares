@@ -55,7 +55,7 @@ struct SearchView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text(String(localized: "search.title"))
+                    Text("Buscar")
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -78,7 +78,7 @@ struct SearchView: View {
                         .foregroundColor(.secondary)
                         .padding(.leading, 12)
                     
-                    TextField(String(localized: "search.placeholder"), text: $searchText)
+                    TextField("Buscar versículos...", text: $searchText)
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.primary)
                         .autocorrectionDisabled()
@@ -118,7 +118,7 @@ struct SearchView: View {
                 if searchText.isEmpty {
                     if recentSearches.isEmpty {
                         Spacer()
-                        Text(String(localized: "search.empty_prompt"))
+                        Text("Digite para buscar versículos")
                             .font(.system(size: bodyFontSize, design: .serif))
                             .foregroundColor(.gray)
                             .multilineTextAlignment(.center)
@@ -133,7 +133,7 @@ struct SearchView: View {
                     Spacer()
                 } else if searchResults.isEmpty {
                     Spacer()
-                    Text(String(localized: "search.no_results"))
+                    Text("Nenhum resultado encontrado")
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -142,8 +142,8 @@ struct SearchView: View {
                     // Result count header
                     HStack {
                         Text(searchResults.count >= 100
-                            ? String(localized: "search.first_100_results")
-                            : "\(searchResults.count) " + String(localized: searchResults.count == 1 ? "search.result_singular" : "search.result_plural"))
+                            ? "Primeiros 100 resultados"
+                            : "\(searchResults.count) " + (searchResults.count == 1 ? "resultado" : "resultados"))
                             .font(.system(size: bodyFontSize * 0.8, design: .serif))
                             .foregroundColor(.secondary)
                         Spacer()
@@ -219,7 +219,7 @@ struct SearchView: View {
     private var recentSearchesView: some View {
         VStack(spacing: 0) {
             HStack {
-                Text(String(localized: "search.recent_title"))
+                Text("Recentes")
                     .font(.system(size: bodyFontSize * 0.9, weight: .semibold, design: .serif))
                     .foregroundColor(.secondary)
                 Spacer()
@@ -227,7 +227,7 @@ struct SearchView: View {
                     HapticManager.shared.impact(style: .light)
                     clearRecentSearches()
                 } label: {
-                    Text(String(localized: "search.clear"))
+                    Text("Limpar")
                         .font(.system(size: bodyFontSize * 0.8, design: .serif))
                         .foregroundColor(.secondary)
                 }

@@ -47,7 +47,7 @@ struct DailyVerseView: View {
                             .foregroundColor(.white)
                     }
 
-                    Text(String(localized: "daily_verse.title"))
+                    Text("Versículo do Dia")
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
 
@@ -91,7 +91,7 @@ struct DailyVerseView: View {
                                 VStack(spacing: 6) {
                                     Image(systemName: "square.and.arrow.up")
                                         .font(.system(size: 22))
-                                    Text(String(localized: "common.share"))
+                                    Text("Compartilhar")
                                         .font(.system(size: 13, design: .serif))
                                 }
                                 .foregroundColor(.white)
@@ -105,7 +105,7 @@ struct DailyVerseView: View {
                                 VStack(spacing: 6) {
                                     Image(systemName: verse.highlightColor != nil ? "bookmark.fill" : "bookmark")
                                         .font(.system(size: 22))
-                                    Text(verse.highlightColor != nil ? String(localized: "daily_verse.bookmarked") : String(localized: "context.highlight"))
+                                    Text(verse.highlightColor != nil ? "Marcado" : "Marcar")
                                         .font(.system(size: 13, design: .serif))
                                 }
                                 .foregroundColor(verse.highlightColor != nil ? .yellow : .white)
@@ -120,7 +120,7 @@ struct DailyVerseView: View {
                                 VStack(spacing: 6) {
                                     Image(systemName: "book.closed")
                                         .font(.system(size: 22))
-                                    Text(String(localized: "common.open"))
+                                    Text("Abrir")
                                         .font(.system(size: 13, design: .serif))
                                 }
                                 .foregroundColor(.white)
