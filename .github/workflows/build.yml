@@ -22,10 +22,12 @@ jobs:
         run: sudo xcode-select -s /Applications/Xcode_16.4.app/Contents/Developer
 
       - name: Install iOS Simulator runtime
-        run: xcodebuild -downloadPlatform iOS
-
-      - name: List available simulators
-        run: xcrun simctl list devices available
+        run: |
+          for i in 1 2 3; do
+            xcodebuild -downloadPlatform iOS && break
+            echo "Attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
 
       - name: Cache Swift Package Manager
         uses: actions/cache@v4
@@ -47,14 +49,19 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Determine simulator
+        id: sim
+        run: |
+          SIMULATOR_NAME=$(xcrun simctl list devices available | grep -m1 'iPhone' | sed 's/^ *//' | sed 's/ (.*//')
+          echo "name=$SIMULATOR_NAME" >> $GITHUB_OUTPUT
+          echo "Using simulator: $SIMULATOR_NAME"
+
       - name: Test
         run: |
-          SIMULATOR_NAME=$(xcrun simctl list devices available | grep "iPhone" | head -1 | sed 's/^ *//' | sed 's/ (.*//')
-          echo "Using simulator: $SIMULATOR_NAME"
           xcodebuild test-without-building \
             -project biblia-matos-soares.xcodeproj \
             -scheme biblia-matos-soares \
-            -destination "platform=iOS Simulator,name=$SIMULATOR_NAME" \
+            -destination 'platform=iOS Simulator,name=${{ steps.sim.outputs.name }}' \
             -skipPackagePluginValidation \
             CODE_SIGN_IDENTITY="" \
             CODE_SIGNING_REQUIRED=NO \
