@@ -96,8 +96,8 @@ struct biblia_matos_soaresApp: App {
         let storeURL = modelConfiguration.url
         let storePaths = [
             storeURL,
-            storeURL.appendingPathExtension("wal"),
-            storeURL.appendingPathExtension("shm"),
+            URL(fileURLWithPath: storeURL.path + "-wal"),
+            URL(fileURLWithPath: storeURL.path + "-shm"),
         ]
         for path in storePaths {
             try? FileManager.default.removeItem(at: path)
