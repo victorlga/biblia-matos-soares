@@ -83,7 +83,208 @@ struct ContentView: View {
         case none
     }
 
+    @State private var columnVisibility: NavigationSplitViewVisibility = .doubleColumn
+
+    private var isIPad: Bool {
+        horizontalSizeClass == .regular
+    }
+
     var body: some View {
+        Group {
+            if isIPad {
+                iPadLayout
+            } else {
+                iPhoneLayout
+            }
+        }
+    }
+
+    // MARK: - iPad Layout
+    private var iPadLayout: some View {
+        NavigationSplitView(columnVisibility: $columnVisibility) {
+            iPadSidebarView(
+                selectedBook: Binding(
+                    get: { viewModel.selectedBook },
+                    set: { newValue in
+                        viewModel.suppressChapterReset = false
+                        viewModel.selectedBook = newValue
+                        viewModel.selectedChapter = 1
+                    }
+                ),
+                selectedChapter: Binding(
+                    get: { viewModel.selectedChapter },
+                    set: { viewModel.selectedChapter = $0 }
+                )
+            )
+        } detail: {
+            chapterDetailView
+        }
+        .navigationSplitViewStyle(.balanced)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            viewModel.restoreFromStorage()
+            if !hasSeenOnboarding {
+                showOnboarding = true
+            }
+        }
+        .onChange(of: importStatus.isImportComplete) { _, isComplete in
+            if isComplete {
+                refreshTrigger = UUID()
+            }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(isPresented: $showOnboarding)
+                .onDisappear {
+                    hasSeenOnboarding = true
+                }
+        }
+        .sheet(item: $noteEditorMode) { mode in
+            switch mode {
+            case .newNote(let verse):
+                NoteEditorView(verse: verse)
+            case .editNote(let note):
+                NoteEditorView(existingNote: note)
+            }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(hapticFeedbackEnabled: $hapticFeedbackEnabled)
+                .presentationDetents([.height(520)])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showChapterPicker) {
+            chapterPickerSheet()
+        }
+    }
+
+    // MARK: - Chapter Detail for iPad
+    private var chapterDetailView: some View {
+        NavigationStack {
+            GeometryReader { geometry in
+                ZStack {
+                    Color.black.ignoresSafeArea()
+
+                    VStack(spacing: 0) {
+                        // Simplified header for iPad (no book picker, just chapter)
+                        iPadHeaderView(geometry: geometry)
+
+                        ScrollViewReader { proxy in
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
+                                    if !importStatus.isImportComplete {
+                                        VStack(spacing: 16) {
+                                            Spacer()
+                                            ProgressView().tint(.gray)
+                                            Text("Carregando a Bíblia...")
+                                                .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                .foregroundColor(.gray)
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    } else if verses.isEmpty {
+                                        Text("Selecione um livro e um capítulo.")
+                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.center)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    } else {
+                                        versesWithContinuousHighlight(geometry: geometry)
+                                    }
+
+                                    if importStatus.isImportComplete && !verses.isEmpty {
+                                        Button {
+                                            HapticManager.shared.impact(style: .medium)
+                                            ReadingProgressView.markChapterAsRead(
+                                                bookName: viewModel.selectedBook,
+                                                chapterNumber: viewModel.selectedChapter,
+                                                context: modelContext
+                                            )
+                                        } label: {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "checkmark.circle")
+                                                    .font(.system(size: 16))
+                                                Text("Marcar capítulo como lido")
+                                                    .font(.system(size: 15, weight: .medium, design: .serif))
+                                            }
+                                            .foregroundColor(.green)
+                                            .padding(.vertical, 12)
+                                            .padding(.horizontal, 20)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(Color.green.opacity(0.5), lineWidth: 1)
+                                            )
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.top, 16)
+                                    }
+
+                                    Color.clear.frame(height: 120)
+                                }
+                                .padding(.top, geometry.size.height * 0.02)
+                            }
+                            .id(refreshTrigger)
+                            .onChange(of: viewModel.selectedBook) { _, _ in
+                                if viewModel.speechSynthesizer.isSpeaking {
+                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                                }
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    let targetVerse = scrollToVerse ?? 1
+                                    scrollToVerse = nil
+                                    proxy.scrollTo(targetVerse, anchor: .top)
+                                    viewModel.syncBookToStorage()
+                                }
+                            }
+                            .onChange(of: viewModel.selectedChapter) { _, _ in
+                                if viewModel.speechSynthesizer.isSpeaking {
+                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                                }
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    let targetVerse = scrollToVerse ?? 1
+                                    scrollToVerse = nil
+                                    proxy.scrollTo(targetVerse, anchor: .top)
+                                    viewModel.syncChapterToStorage()
+                                }
+                            }
+                        }
+                    }
+
+                    // Floating action buttons for iPad
+                    VStack {
+                        Spacer()
+                        iPadFloatingButtons()
+                    }
+                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? 0 : 16)
+                }
+                .preferredColorScheme(.dark)
+            }
+            .navigationDestination(isPresented: $showReadingHistory) {
+                ReadingHistoryView { bookName, chapterNumber, verseNumber in
+                    viewModel.suppressChapterReset = true
+                    viewModel.selectedBook = bookName
+                    viewModel.selectedChapter = chapterNumber
+                    scrollToVerse = verseNumber
+                }
+            }
+            .navigationDestination(isPresented: $showDailyVerse) {
+                DailyVerseView { bookName, chapterNumber, verseNumber in
+                    viewModel.suppressChapterReset = true
+                    viewModel.selectedBook = bookName
+                    viewModel.selectedChapter = chapterNumber
+                    scrollToVerse = verseNumber
+                }
+            }
+            .navigationDestination(isPresented: $showReadingProgress) {
+                ReadingProgressView { bookName, chapterNumber, verseNumber in
+                    viewModel.suppressChapterReset = true
+                    viewModel.selectedBook = bookName
+                    viewModel.selectedChapter = chapterNumber
+                    scrollToVerse = verseNumber
+                }
+            }
+        }
+    }
+
+    // MARK: - iPhone Layout
+    private var iPhoneLayout: some View {
         NavigationStack {
             GeometryReader { geometry in
                 ZStack {
@@ -795,6 +996,197 @@ struct ContentView: View {
         }
         .presentationDetents(totalChapters > 30 ? [.medium, .large] : [.medium])
         .preferredColorScheme(.dark)
+    }
+
+    // MARK: - iPad Header
+    private func iPadHeaderView(geometry: GeometryProxy) -> some View {
+        VStack(spacing: 0) {
+            HStack(spacing: geometry.size.width * 0.02) {
+                // Book name (read-only, selected from sidebar)
+                Text(viewModel.selectedBook)
+                    .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+
+                // Chapter selector
+                Button {
+                    showChapterPicker = true
+                } label: {
+                    HStack(spacing: 4) {
+                        Text("Cap. \(viewModel.selectedChapter)")
+                            .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
+                            .foregroundColor(.primary)
+                        Image(systemName: "chevron.down")
+                            .font(.system(size: headerFontSize * 0.6))
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.horizontal, geometry.size.width * 0.02)
+                    .padding(.vertical, geometry.size.height * 0.01)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(Color(.systemGray6))
+                    )
+                }
+                .fixedSize()
+
+                Spacer()
+
+                // Speaker button
+                Button {
+                    HapticManager.shared.impact(style: .medium)
+                    if viewModel.speechSynthesizer.isSpeaking {
+                        viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                    } else {
+                        viewModel.readCurrentChapter(verses: verses, rate: Float(speechRate))
+                    }
+                } label: {
+                    Image(systemName: viewModel.speechSynthesizer.isSpeaking ? "stop.fill" : "speaker.wave.2.fill")
+                        .font(.system(size: headerFontSize * 0.7))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
+
+                // Search button
+                NavigationLink {
+                    SearchView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
+                    }
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .font(.system(size: headerFontSize * 0.7))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
+            }
+            .padding(.horizontal, geometry.size.width * 0.03)
+            .padding(.top, geometry.size.height * 0.01)
+            .padding(.bottom, geometry.size.height * 0.01)
+            .background(
+                Color.black
+                    .overlay(
+                        Rectangle()
+                            .fill(Color.gray.opacity(0.2))
+                            .frame(height: 1),
+                        alignment: .bottom
+                    )
+            )
+        }
+    }
+
+    // MARK: - iPad Floating Buttons
+    private func iPadFloatingButtons() -> some View {
+        HStack {
+            HStack(spacing: 20) {
+                // Settings
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    showSettings = true
+                } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+
+                // Reading history
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    showReadingHistory = true
+                } label: {
+                    Image(systemName: "clock.arrow.circlepath")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+
+                // Daily verse
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    showDailyVerse = true
+                } label: {
+                    Image(systemName: "sun.max.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+
+                // Reading progress
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    showReadingProgress = true
+                } label: {
+                    Image(systemName: "chart.bar.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+            }
+
+            Spacer()
+
+            HStack(spacing: 20) {
+                // Notes
+                NavigationLink {
+                    NotesView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
+                    }
+                } label: {
+                    Image(systemName: "note.text")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+
+                // Bookmarks
+                NavigationLink {
+                    HighlightedVersesView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
+                    }
+                } label: {
+                    Image(systemName: "bookmark.fill")
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                        .frame(width: 56, height: 56)
+                        .background(.ultraThinMaterial)
+                        .clipShape(Circle())
+                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                }
+            }
+        }
+        .padding(.horizontal, 24)
+        .padding(.vertical, 16)
     }
 
     private var currentTransition: AnyTransition {
