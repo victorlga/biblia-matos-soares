@@ -17,8 +17,8 @@
 			isa = PBXContainerItemProxy;
 			containerPortal = 5776D21D2DF9022600CFDACC /* Project object */;
 			proxyType = 1;
-			remoteGlobalIDString = DE000005AAAA000000000005;
-			remoteInfo = "biblia-matos-soaresTests";
+			remoteGlobalIDString = 5776D2242DF9022600CFDACC;
+			remoteInfo = "biblia-matos-soares";
 		};
 /* End PBXContainerItemProxy section */
 
@@ -393,6 +393,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NFTGLRJ8QH;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -414,6 +415,7 @@
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = NFTGLRJ8QH;
 				GENERATE_INFOPLIST_FILE = YES;
