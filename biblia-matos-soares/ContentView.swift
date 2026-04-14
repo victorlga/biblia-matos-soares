@@ -262,39 +262,35 @@ struct ContentView: View {
                         headerView(geometry: geometry)
 
                         ScrollViewReader { proxy in
-                                ScrollView {
-                                    VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
-                                        if !importStatus.isImportComplete {
-                                            VStack(spacing: 16) {
-                                                Spacer()
-                                                ProgressView()
-                                                    .tint(.gray)
-                                                                                        Text("Carregando a Bíblia...")
-                                                                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                                                                            .foregroundColor(.gray)
-                                                                                        Spacer()
-                                                                                    }
-                                                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                                                                                } else if verses.isEmpty {
-                                                                                    Text("Selecione um livro e um capítulo.")
-                                                        .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                                        .foregroundColor(.gray)
-                                                        .multilineTextAlignment(.center)
-                                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                                        } else {
-                                        // Renderizar versículos com destaque contínuo
+                            ScrollView {
+                                VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
+                                    if !importStatus.isImportComplete {
+                                        VStack(spacing: 16) {
+                                            Spacer()
+                                            ProgressView()
+                                                .tint(.gray)
+                                            Text("Carregando a Bíblia...")
+                                                .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                .foregroundColor(.gray)
+                                            Spacer()
+                                        }
+                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    } else if verses.isEmpty {
+                                        Text("Selecione um livro e um capítulo.")
+                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                            .foregroundColor(.gray)
+                                            .multilineTextAlignment(.center)
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                    } else {
                                         versesWithContinuousHighlight(geometry: geometry)
                                     }
 
-                                    // "Mark as read" button at the bottom of the chapter
                                     if importStatus.isImportComplete && !verses.isEmpty {
                                         markAsReadButton()
                                     }
 
                                     Color.clear
-                                        .frame(height: 120)
+                                        .frame(height: 80)
                                 }
                                 .padding(.top, geometry.size.height * 0.02)
                                 .transition(currentTransition)
@@ -337,27 +333,24 @@ struct ContentView: View {
                                         }
                                     }
                             )
-                                            .onChange(of: viewModel.selectedBook) { _, _ in
-                                                chapterMarkedAsRead = false
-                                                if viewModel.speechSynthesizer.isSpeaking {
-                                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
-                                                }
-                                                let maxChapter = BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1
-                                                withAnimation(.easeOut(duration: 0.3)) {
-                                                    // Only reset chapter if this isn't a programmatic
-                                                    // navigation that already set the target chapter
-                                                    // (e.g., goToPreviousChapter crossing book boundaries).
-                                                    if viewModel.suppressChapterReset {
-                                                        viewModel.suppressChapterReset = false
-                                                    } else if viewModel.selectedChapter > maxChapter {
-                                                        viewModel.selectedChapter = 1
-                                                    }
-                                                    let targetVerse = scrollToVerse ?? 1
-                                                    scrollToVerse = nil
-                                                    proxy.scrollTo(targetVerse, anchor: .top)
-                                                    viewModel.syncBookToStorage()
-                                                }
-                                            }
+                            .onChange(of: viewModel.selectedBook) { _, _ in
+                                chapterMarkedAsRead = false
+                                if viewModel.speechSynthesizer.isSpeaking {
+                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                                }
+                                let maxChapter = BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    if viewModel.suppressChapterReset {
+                                        viewModel.suppressChapterReset = false
+                                    } else if viewModel.selectedChapter > maxChapter {
+                                        viewModel.selectedChapter = 1
+                                    }
+                                    let targetVerse = scrollToVerse ?? 1
+                                    scrollToVerse = nil
+                                    proxy.scrollTo(targetVerse, anchor: .top)
+                                    viewModel.syncBookToStorage()
+                                }
+                            }
                             .onChange(of: viewModel.selectedChapter) { _, _ in
                                 chapterMarkedAsRead = false
                                 if viewModel.speechSynthesizer.isSpeaking {
@@ -371,11 +364,7 @@ struct ContentView: View {
                                 }
                             }
                         }
-                    }
 
-                    // Footer bar at the bottom
-                    VStack(spacing: 0) {
-                        Spacer()
                         footerBar(geometry: geometry)
                     }
                 }
