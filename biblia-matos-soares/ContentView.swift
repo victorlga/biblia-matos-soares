@@ -27,6 +27,7 @@ struct ContentView: View {
     @State private var showSettings: Bool = false
     @State private var showReadingHistory: Bool = false
     @State private var showDailyVerse: Bool = false
+    @State private var showReadingProgress: Bool = false
     @State private var showBookPicker: Bool = false
     @State private var showChapterPicker: Bool = false
 
@@ -117,6 +118,34 @@ struct ContentView: View {
                                         } else {
                                         // Renderizar versículos com destaque contínuo
                                         versesWithContinuousHighlight(geometry: geometry)
+                                    }
+
+                                    // "Mark as read" button at the bottom of the chapter
+                                    if importStatus.isImportComplete && !verses.isEmpty {
+                                        Button {
+                                            HapticManager.shared.impact(style: .medium)
+                                            ReadingProgressView.markChapterAsRead(
+                                                bookName: viewModel.selectedBook,
+                                                chapterNumber: viewModel.selectedChapter,
+                                                context: modelContext
+                                            )
+                                        } label: {
+                                            HStack(spacing: 8) {
+                                                Image(systemName: "checkmark.circle")
+                                                    .font(.system(size: 16))
+                                                Text("Marcar capítulo como lido")
+                                                    .font(.system(size: 15, weight: .medium, design: .serif))
+                                            }
+                                            .foregroundColor(.green)
+                                            .padding(.vertical, 12)
+                                            .padding(.horizontal, 20)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 20)
+                                                    .stroke(Color.green.opacity(0.5), lineWidth: 1)
+                                            )
+                                        }
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.top, 16)
                                     }
 
                                     Color.clear
@@ -254,6 +283,14 @@ struct ContentView: View {
                 }
                 .navigationDestination(isPresented: $showDailyVerse) {
                     DailyVerseView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
+                    }
+                }
+                .navigationDestination(isPresented: $showReadingProgress) {
+                    ReadingProgressView { bookName, chapterNumber, verseNumber in
                         viewModel.suppressChapterReset = true
                         viewModel.selectedBook = bookName
                         viewModel.selectedChapter = chapterNumber
@@ -520,6 +557,20 @@ struct ContentView: View {
                             showDailyVerse = true
                         } label: {
                             Image(systemName: "sun.max.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+
+                        // Reading progress button
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            showReadingProgress = true
+                        } label: {
+                            Image(systemName: "chart.bar.fill")
                                 .font(.system(size: 22))
                                 .foregroundColor(.white)
                                 .frame(width: 56, height: 56)

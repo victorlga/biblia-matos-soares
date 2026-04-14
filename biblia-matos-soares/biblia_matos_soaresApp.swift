@@ -63,6 +63,7 @@ struct biblia_matos_soaresApp: App {
         let schema = Schema([
             BibleVerse.self,
             VerseNote.self,
+            ReadingProgress.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {

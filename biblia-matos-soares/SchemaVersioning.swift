@@ -78,7 +78,7 @@ enum SchemaV3: VersionedSchema {
     static var versionIdentifier = Schema.Version(3, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [BibleVerse.self, VerseNote.self]
+        [BibleVerse.self, VerseNote.self, ReadingProgress.self]
     }
 }
 
