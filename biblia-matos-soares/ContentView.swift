@@ -46,6 +46,7 @@ struct ContentView: View {
     @State private var refreshTrigger = UUID()
     @State private var isHeaderVisible: Bool = true
     @State private var lastScrollOffset: CGFloat = 0
+    @State private var ignoreScrollOffsets: Bool = false
 
     @EnvironmentObject private var importStatus: ImportStatus
 
@@ -206,7 +207,11 @@ struct ContentView: View {
                                                     proxy.scrollTo(targetVerse, anchor: .top)
                                                     viewModel.syncBookToStorage()
                                                 }
+                                                ignoreScrollOffsets = true
                                                 isHeaderVisible = true
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                                    ignoreScrollOffsets = false
+                                                }
                                             }
                             .onChange(of: viewModel.selectedChapter) { _, _ in
                                 if viewModel.speechSynthesizer.isSpeaking {
@@ -218,7 +223,11 @@ struct ContentView: View {
                                     proxy.scrollTo(targetVerse, anchor: .top)
                                     viewModel.syncChapterToStorage()
                                 }
+                                ignoreScrollOffsets = true
                                 isHeaderVisible = true
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                    ignoreScrollOffsets = false
+                                }
                             }
                         }
                     }
@@ -642,6 +651,11 @@ struct ContentView: View {
     }
     
     private func handleScrollOffset(_ offset: CGFloat) {
+        guard !ignoreScrollOffsets else {
+            lastScrollOffset = offset
+            return
+        }
+
         let delta = offset - lastScrollOffset
 
         if delta < -10 && isHeaderVisible {
