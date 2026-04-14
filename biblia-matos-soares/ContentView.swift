@@ -25,6 +25,8 @@ struct ContentView: View {
     @State private var showOnboarding: Bool = false
     @State private var showFontSizeSlider: Bool = false
     @State private var showSettings: Bool = false
+    @State private var showReadingHistory: Bool = false
+    @State private var showDailyVerse: Bool = false
 
     @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     @State private var selectedChapter: Int = 1
@@ -34,6 +36,7 @@ struct ContentView: View {
     
     @State private var speechSynthesizer = AVSpeechSynthesizer()
     @State private var noteEditorMode: NoteEditorMode?
+    @State private var scrollToVerse: Int?
     @State private var refreshTrigger = UUID()
 
     @EnvironmentObject private var importStatus: ImportStatus
@@ -177,7 +180,9 @@ struct ContentView: View {
                                 }
                                 withAnimation(.easeOut(duration: 0.3)) {
                                     selectedChapter = 1
-                                    proxy.scrollTo(1, anchor: .top)
+                                    let targetVerse = scrollToVerse ?? 1
+                                    scrollToVerse = nil
+                                    proxy.scrollTo(targetVerse, anchor: .top)
                                     storedBook = newBook
                                     storedChapter = selectedChapter
                                     updateReadingHistory()
@@ -188,7 +193,9 @@ struct ContentView: View {
                                     speechSynthesizer.stopSpeaking(at: .immediate)
                                 }
                                 withAnimation(.easeOut(duration: 0.3)) {
-                                    proxy.scrollTo(1, anchor: .top)
+                                    let targetVerse = scrollToVerse ?? 1
+                                    scrollToVerse = nil
+                                    proxy.scrollTo(targetVerse, anchor: .top)
                                     storedChapter = newChapter
                                     updateReadingHistory()
                                 }
@@ -239,26 +246,69 @@ struct ContentView: View {
                         .presentationDetents([.height(260)])
                         .presentationDragIndicator(.visible)
                 }
+                .navigationDestination(isPresented: $showReadingHistory) {
+                    ReadingHistoryView { bookName, chapterNumber, verseNumber in
+                        selectedBook = bookName
+                        selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
+                    }
+                }
+                .navigationDestination(isPresented: $showDailyVerse) {
+                    DailyVerseView { bookName, chapterNumber, verseNumber in
+                        selectedBook = bookName
+                        selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
+                    }
+                }
             }
+        }
+    }
+
+    private var verseNumbersWithNotes: Set<Int> {
+        let book = selectedBook
+        let chapter = selectedChapter
+        do {
+            let descriptor = FetchDescriptor<VerseNote>(
+                predicate: #Predicate { note in
+                    note.bookName == book && note.chapterNumber == chapter
+                }
+            )
+            let notes = try modelContext.fetch(descriptor)
+            return Set(notes.map { $0.verseNumber })
+        } catch {
+            return []
         }
     }
 
     // Nova função para renderizar versículos com destaque contínuo
     private func versesWithContinuousHighlight(geometry: GeometryProxy) -> some View {
         let groupedVerses = groupConsecutiveHighlightedVerses(verses)
-        
+        let notedVerses = verseNumbersWithNotes
+
         return VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
             ForEach(groupedVerses, id: \.id) { group in
                 VStack(alignment: .leading, spacing: group.isHighlighted ? 0 : geometry.size.height * 0.02) {
                     ForEach(group.verses) { verse in
                         HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
-                            Text("\(verse.verseNumber)")
-                                .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
-                                .foregroundColor(.secondary)
-                                .frame(width: geometry.size.width * 0.08, alignment: .leading)
-                                .onLongPressGesture(minimumDuration: 0.3) {
-                                    copyVerseReference(verse)
+                            HStack(alignment: .top, spacing: 2) {
+                                Text("\(verse.verseNumber)")
+                                    .font(.system(size: verseNumberFontSize, weight: .medium, design: .serif))
+                                    .foregroundColor(.secondary)
+
+                                if notedVerses.contains(verse.verseNumber) {
+                                    Image(systemName: "note.text")
+                                        .font(.system(size: verseNumberFontSize * 0.55))
+                                        .foregroundColor(.secondary)
+                                        .onTapGesture {
+                                            HapticManager.shared.impact(style: .light)
+                                            openNoteForVerse(verse)
+                                        }
                                 }
+                            }
+                            .frame(width: geometry.size.width * 0.08, alignment: .leading)
+                            .onLongPressGesture(minimumDuration: 0.3) {
+                                copyVerseReference(verse)
+                            }
 
                             Text(verse.text)
                                 .font(.system(size: verseFontSize, weight: .regular, design: .serif))
@@ -284,11 +334,12 @@ struct ContentView: View {
                                 Label("Adicionar Nota", systemImage: "note.text")
                             }
 
-                            //Button {
-                            //    copyVerseReference(verse)
-                            //} label: {
-                            //    Label("Copiar Referência", systemImage: "doc.on.doc")
-                            //}
+                            Button {
+                                HapticManager.shared.impact(style: .light)
+                                copyVerseWithText(verse)
+                            } label: {
+                                Label("Copiar", systemImage: "doc.on.doc")
+                            }
 
                             Button {
                                 HapticManager.shared.impact(style: .light)
@@ -458,9 +509,10 @@ struct ContentView: View {
 
                 // Search button
                 NavigationLink {
-                    SearchView { bookName, chapterNumber in
+                    SearchView { bookName, chapterNumber, verseNumber in
                         selectedBook = bookName
                         selectedChapter = chapterNumber
+                        scrollToVerse = verseNumber
                     }
                 } label: {
                     Image(systemName: "magnifyingglass")
@@ -493,18 +545,49 @@ struct ContentView: View {
             if !showFontSizeSlider {
                 // Regular buttons
                 HStack {
-                    // Settings button (left side)
-                    Button {
-                        HapticManager.shared.impact(style: .light)
-                        showSettings = true
-                    } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 22))
-                            .foregroundColor(.white)
-                            .frame(width: 56, height: 56)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    // Left side buttons
+                    HStack(spacing: 20) {
+                        // Settings button
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            showSettings = true
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+
+                        // Reading history button
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            showReadingHistory = true
+                        } label: {
+                            Image(systemName: "clock.arrow.circlepath")
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
+
+                        // Daily verse button
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            showDailyVerse = true
+                        } label: {
+                            Image(systemName: "sun.max.fill")
+                                .font(.system(size: 22))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(.ultraThinMaterial)
+                                .clipShape(Circle())
+                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                        }
                     }
 
                     Spacer()
@@ -513,10 +596,11 @@ struct ContentView: View {
                     HStack(spacing: 20) {
                         // Notes button
                         NavigationLink {
-                            NotesView { bookName, chapterNumber in
-                                selectedBook = bookName
-                                selectedChapter = chapterNumber
-                            }
+                                NotesView { bookName, chapterNumber, verseNumber in
+                                    selectedBook = bookName
+                                    selectedChapter = chapterNumber
+                                    scrollToVerse = verseNumber
+                                }
                         } label: {
                             Image(systemName: "note.text")
                                 .font(.system(size: 22))
@@ -529,10 +613,11 @@ struct ContentView: View {
 
                         // Bookmarks button
                         NavigationLink {
-                            HighlightedVersesView { bookName, chapterNumber in
-                                selectedBook = bookName
-                                selectedChapter = chapterNumber
-                            }
+                                HighlightedVersesView { bookName, chapterNumber, verseNumber in
+                                    selectedBook = bookName
+                                    selectedChapter = chapterNumber
+                                    scrollToVerse = verseNumber
+                                }
                         } label: {
                             Image(systemName: "bookmark.fill")
                                 .font(.system(size: 22))
@@ -624,6 +709,24 @@ struct ContentView: View {
         speechSynthesizer.speak(utterance)
     }
     
+    private func openNoteForVerse(_ verse: BibleVerse) {
+        let book = verse.bookName
+        let chapter = verse.chapterNumber
+        let verseNum = verse.verseNumber
+        do {
+            let descriptor = FetchDescriptor<VerseNote>(
+                predicate: #Predicate { note in
+                    note.bookName == book && note.chapterNumber == chapter && note.verseNumber == verseNum
+                }
+            )
+            if let existingNote = try modelContext.fetch(descriptor).first {
+                noteEditorMode = .editNote(existingNote)
+            }
+        } catch {
+            print("Erro ao buscar nota: \(error.localizedDescription)")
+        }
+    }
+
     private func toggleHighlight(for verse: BibleVerse) {
         verse.isHighlighted.toggle()
         HapticManager.shared.impact(style: .medium)
@@ -638,6 +741,12 @@ struct ContentView: View {
     private func copyVerseReference(_ verse: BibleVerse) {
         let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
         UIPasteboard.general.string = reference
+        HapticManager.shared.notification(type: .success)
+    }
+
+    private func copyVerseWithText(_ verse: BibleVerse) {
+        let fullText = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber) - \(verse.text)"
+        UIPasteboard.general.string = fullText
         HapticManager.shared.notification(type: .success)
     }
     

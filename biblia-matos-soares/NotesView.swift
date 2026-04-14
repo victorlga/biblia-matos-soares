@@ -20,7 +20,7 @@ struct NotesView: View {
     @State private var noteToEdit: VerseNote?
     
     // Callback para navegar para um versículo específico no ContentView
-    var onNavigateToVerse: ((String, Int) -> Void)?
+    var onNavigateToVerse: ((String, Int, Int) -> Void)?
     
     private var headerFontSize: CGFloat {
         switch horizontalSizeClass {
@@ -38,7 +38,7 @@ struct NotesView: View {
         }
     }
     
-    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+    init(onNavigateToVerse: ((String, Int, Int) -> Void)? = nil) {
         self.onNavigateToVerse = onNavigateToVerse
         _allNotes = Query(
             sort: [
@@ -222,7 +222,7 @@ struct NotesView: View {
     }
     
     private func openVerse(_ note: VerseNote) {
-        onNavigateToVerse?(note.bookName, note.chapterNumber)
+        onNavigateToVerse?(note.bookName, note.chapterNumber, note.verseNumber)
         dismiss()
     }
     

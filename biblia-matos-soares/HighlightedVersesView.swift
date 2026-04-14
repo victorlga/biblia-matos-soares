@@ -16,9 +16,9 @@ struct HighlightedVersesView: View {
     @Query private var highlightedVerses: [BibleVerse]
     
     // Callback para navegar para um versículo específico no ContentView
-    var onNavigateToVerse: ((String, Int) -> Void)?
+    var onNavigateToVerse: ((String, Int, Int) -> Void)?
 
-    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+    init(onNavigateToVerse: ((String, Int, Int) -> Void)? = nil) {
         self.onNavigateToVerse = onNavigateToVerse
         _highlightedVerses = Query(
             filter: #Predicate<BibleVerse> { verse in
@@ -179,7 +179,7 @@ struct HighlightedVersesView: View {
 
     // Função para abrir um versículo no ContentView
     private func openVerse(_ verse: BibleVerse) {
-        onNavigateToVerse?(verse.bookName, verse.chapterNumber)
+        onNavigateToVerse?(verse.bookName, verse.chapterNumber, verse.verseNumber)
         dismiss()
     }
 

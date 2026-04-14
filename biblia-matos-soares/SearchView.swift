@@ -13,7 +13,7 @@ struct SearchView: View {
     @State private var isSearching: Bool = false
     
     // Callback para navegar para um versículo específico no ContentView
-    var onNavigateToVerse: ((String, Int) -> Void)?
+    var onNavigateToVerse: ((String, Int, Int) -> Void)?
     
     private var headerFontSize: CGFloat {
         switch horizontalSizeClass {
@@ -31,7 +31,7 @@ struct SearchView: View {
         }
     }
     
-    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+    init(onNavigateToVerse: ((String, Int, Int) -> Void)? = nil) {
         self.onNavigateToVerse = onNavigateToVerse
     }
     
@@ -211,7 +211,7 @@ struct SearchView: View {
     }
     
     private func openVerse(_ verse: BibleVerse) {
-        onNavigateToVerse?(verse.bookName, verse.chapterNumber)
+        onNavigateToVerse?(verse.bookName, verse.chapterNumber, verse.verseNumber)
         dismiss()
     }
 }
