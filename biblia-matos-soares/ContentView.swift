@@ -552,6 +552,7 @@ struct ContentView: View {
                                     } label: {
                                         Label(highlightColorLabel(option.name), systemImage: verse.highlightColor == option.name ? "checkmark.circle.fill" : "circle.fill")
                                     }
+                                    .tint(option.color)
                                 }
 
                                 if verse.highlightColor != nil {
@@ -819,15 +820,25 @@ struct ContentView: View {
         if delta < -10 {
             lastScrollOffset = offset
             if isHeaderVisible {
+                ignoreScrollOffsets = true
                 withAnimation(.easeOut(duration: 0.25)) {
                     isHeaderVisible = false
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    lastScrollOffset = offset
+                    ignoreScrollOffsets = false
                 }
             }
         } else if delta > 10 {
             lastScrollOffset = offset
             if !isHeaderVisible {
+                ignoreScrollOffsets = true
                 withAnimation(.easeOut(duration: 0.25)) {
                     isHeaderVisible = true
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    lastScrollOffset = offset
+                    ignoreScrollOffsets = false
                 }
             }
         }
