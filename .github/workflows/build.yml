@@ -30,9 +30,9 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Build
+      - name: Build for Testing
         run: |
-          xcodebuild build \
+          xcodebuild build-for-testing \
             -project biblia-matos-soares.xcodeproj \
             -scheme biblia-matos-soares \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
@@ -43,7 +43,7 @@ jobs:
 
       - name: Test
         run: |
-          xcodebuild test \
+          xcodebuild test-without-building \
             -project biblia-matos-soares.xcodeproj \
             -scheme biblia-matos-soares \
             -destination 'platform=iOS Simulator,name=iPhone 16' \
