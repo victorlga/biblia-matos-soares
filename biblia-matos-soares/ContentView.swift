@@ -599,32 +599,25 @@ struct ContentView: View {
                                     Button(role: .destructive) {
                                         viewModel.removeHighlight(for: verse, context: modelContext)
                                     } label: {
-                                                                    Label("Desmarcar", systemImage: "bookmark.slash")
-                                                                }
-                                                            }
-                                                        } label: {
-                                                            Label(verse.highlightColor != nil ? "Cor do marcador" : "Marcar", systemImage: "bookmark")
-                                                        }
+                                        Label("Desmarcar", systemImage: "bookmark.slash")
+                                    }
+                                }
+                            } label: {
+                                Label(verse.highlightColor != nil ? "Cor do marcador" : "Marcar", systemImage: "bookmark")
+                            }
 
-                                                        Button {
-                                                            HapticManager.shared.impact(style: .light)
-                                                            noteEditorMode = .newNote(verse)
-                                                        } label: {
-                                                            Label("Adicionar Nota", systemImage: "note.text")
-                                                        }
+                            Button {
+                                HapticManager.shared.impact(style: .light)
+                                noteEditorMode = .newNote(verse)
+                            } label: {
+                                Label("Adicionar Nota", systemImage: "note.text")
+                            }
 
-                                                        Button {
-                                                            HapticManager.shared.impact(style: .light)
-                                                            viewModel.copyVerseWithText(verse)
-                                                        } label: {
-                                                            Label("Copiar", systemImage: "doc.on.doc")
-                                                        }
-
-                                                        Button {
-                                                            HapticManager.shared.impact(style: .light)
-                                                            viewModel.shareVerse(verse)
-                                                        } label: {
-                                                            Label("Compartilhar", systemImage: "square.and.arrow.up")
+                            Button {
+                                HapticManager.shared.impact(style: .light)
+                                viewModel.copyVerseWithText(verse)
+                            } label: {
+                                Label("Copiar", systemImage: "doc.on.doc")
                             }
                         }
                         .onLongPressGesture(minimumDuration: 0.5) {
