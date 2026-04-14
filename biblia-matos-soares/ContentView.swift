@@ -14,6 +14,13 @@ extension View {
     }
 }
 
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ContentView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
     @AppStorage("fontSize") private var fontSize: Double = 17.0
@@ -38,6 +45,9 @@ struct ContentView: View {
     @State private var noteEditorMode: NoteEditorMode?
     @State private var scrollToVerse: Int?
     @State private var refreshTrigger = UUID()
+    @State private var isHeaderVisible: Bool = true
+    @State private var lastScrollOffset: CGFloat = 0
+    @State private var ignoreScrollOffsets: Bool = false
 
     @EnvironmentObject private var importStatus: ImportStatus
 
@@ -247,12 +257,11 @@ struct ContentView: View {
                                             }
                                         }
 
-                                        // Floating action buttons for iPad
-                                        VStack {
+                                        // Footer bar for iPad
+                    VStack {
                         Spacer()
-                        iPadFloatingButtons()
+                        iPadFooterBar(geometry: geometry)
                     }
-                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? 0 : 16)
                 }
                 .preferredColorScheme(.dark)
             }
@@ -292,7 +301,10 @@ struct ContentView: View {
                         .ignoresSafeArea()
 
                     VStack(spacing: 0) {
-                        headerView(geometry: geometry)
+                        if isHeaderVisible {
+                            headerView(geometry: geometry)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
 
                         ScrollViewReader { proxy in
                                 ScrollView {
@@ -354,6 +366,18 @@ struct ContentView: View {
                                 }
                                 .padding(.top, geometry.size.height * 0.02)
                                 .transition(currentTransition)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(
+                                            key: ScrollOffsetPreferenceKey.self,
+                                            value: geo.frame(in: .named("scroll")).minY
+                                        )
+                                    }
+                                )
+                            }
+                            .coordinateSpace(name: "scroll")
+                            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
+                                handleScrollOffset(offset)
                             }
                             .id(refreshTrigger)
                             .contentShape(Rectangle())
@@ -412,6 +436,13 @@ struct ContentView: View {
                                                     proxy.scrollTo(targetVerse, anchor: .top)
                                                     viewModel.syncBookToStorage()
                                                 }
+                                                ignoreScrollOffsets = true
+                                                withAnimation(.easeOut(duration: 0.25)) {
+                                                    isHeaderVisible = true
+                                                }
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                                    ignoreScrollOffsets = false
+                                                }
                                             }
                             .onChange(of: viewModel.selectedChapter) { _, _ in
                                 if viewModel.speechSynthesizer.isSpeaking {
@@ -423,16 +454,25 @@ struct ContentView: View {
                                     proxy.scrollTo(targetVerse, anchor: .top)
                                     viewModel.syncChapterToStorage()
                                 }
+                                ignoreScrollOffsets = true
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    isHeaderVisible = true
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                    ignoreScrollOffsets = false
+                                }
                             }
                         }
                     }
 
-                    // Floating action buttons at the bottom
-                    VStack {
-                        Spacer()
-                        floatingActionButtons()
+                    // Footer bar at the bottom
+                    if isHeaderVisible {
+                        VStack {
+                            Spacer()
+                            footerBar(geometry: geometry)
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
-                    .padding(.bottom, geometry.safeAreaInsets.bottom > 0 ? 0 : 16)
                 }
                 .preferredColorScheme(.dark)
                 .onAppear {
@@ -645,7 +685,7 @@ struct ContentView: View {
                     showChapterPicker = true
                 } label: {
                     HStack(spacing: 4) {
-                                        Text("\(String(localized: "common.chapter_abbrev")) \(viewModel.selectedChapter)")
+                                        Text("\(viewModel.selectedChapter)")
                                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                                             .foregroundColor(.primary)
                                         Image(systemName: "chevron.down")
@@ -663,6 +703,21 @@ struct ContentView: View {
 
                                 // Spacer between selectors and action buttons
                                 Spacer()
+
+                // Daily verse button
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    showDailyVerse = true
+                } label: {
+                    Image(systemName: "sun.max.fill")
+                        .font(.system(size: headerFontSize * 0.7))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
 
                 // Speaker button
                 Button {
@@ -717,136 +772,105 @@ struct ContentView: View {
         }
     }
 
-    private func floatingActionButtons() -> some View {
+    private func footerBar(geometry: GeometryProxy) -> some View {
         ZStack {
             if !showFontSizeSlider {
-                // Regular buttons
-                HStack {
-                    // Left side buttons
-                    HStack(spacing: 20) {
-                        // Settings button
-                        Button {
-                            HapticManager.shared.impact(style: .light)
-                            showSettings = true
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
-
-                        // Reading history button
-                        Button {
-                            HapticManager.shared.impact(style: .light)
-                            showReadingHistory = true
-                        } label: {
-                            Image(systemName: "clock.arrow.circlepath")
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
-
-                        // Daily verse button
-                        Button {
-                            HapticManager.shared.impact(style: .light)
-                            showDailyVerse = true
-                        } label: {
-                            Image(systemName: "sun.max.fill")
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
-
-                        // Reading progress button
-                        Button {
-                            HapticManager.shared.impact(style: .light)
-                            showReadingProgress = true
-                        } label: {
-                            Image(systemName: "chart.bar.fill")
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
+                HStack(spacing: 0) {
+                    // Settings
+                    Button {
+                        HapticManager.shared.impact(style: .light)
+                        showSettings = true
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
                     }
 
-                    Spacer()
+                    // Reading history
+                    Button {
+                        HapticManager.shared.impact(style: .light)
+                        showReadingHistory = true
+                    } label: {
+                        Image(systemName: "clock.arrow.circlepath")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                    }
 
-                    // Right side buttons
-                    HStack(spacing: 20) {
-                        // Notes button
-                        NavigationLink {
-                                NotesView { bookName, chapterNumber, verseNumber in
-                                    viewModel.suppressChapterReset = true
-                                    viewModel.selectedBook = bookName
-                                    viewModel.selectedChapter = chapterNumber
-                                    scrollToVerse = verseNumber
-                                }
-                        } label: {
-                            Image(systemName: "note.text")
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                        }
+                    // Reading progress
+                    Button {
+                        HapticManager.shared.impact(style: .light)
+                        showReadingProgress = true
+                    } label: {
+                        Image(systemName: "chart.bar.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                    }
 
-                        // Bookmarks button
-                        NavigationLink {
-                                HighlightedVersesView { bookName, chapterNumber, verseNumber in
-                                    viewModel.suppressChapterReset = true
-                                    viewModel.selectedBook = bookName
-                                    viewModel.selectedChapter = chapterNumber
-                                    scrollToVerse = verseNumber
-                                }
-                        } label: {
-                            Image(systemName: "bookmark.fill")
-                                .font(.system(size: 22))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    // Notes
+                    NavigationLink {
+                        NotesView { bookName, chapterNumber, verseNumber in
+                            viewModel.suppressChapterReset = true
+                            viewModel.selectedBook = bookName
+                            viewModel.selectedChapter = chapterNumber
+                            scrollToVerse = verseNumber
                         }
+                    } label: {
+                        Image(systemName: "note.text")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                    }
 
-                        // Font size button
-                        Button {
-                            HapticManager.shared.impact(style: .light)
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                showFontSizeSlider = true
-                            }
-                        } label: {
-                            Text("Aa")
-                                .font(.system(size: 22, weight: .semibold))
-                                .foregroundColor(.white)
-                                .frame(width: 56, height: 56)
-                                .background(.ultraThinMaterial)
-                                .clipShape(Circle())
-                                .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+                    // Bookmarks
+                    NavigationLink {
+                        HighlightedVersesView { bookName, chapterNumber, verseNumber in
+                            viewModel.suppressChapterReset = true
+                            viewModel.selectedBook = bookName
+                            viewModel.selectedChapter = chapterNumber
+                            scrollToVerse = verseNumber
                         }
+                    } label: {
+                        Image(systemName: "bookmark.fill")
+                            .font(.system(size: 18))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
+                    }
+
+                    // Font size
+                    Button {
+                        HapticManager.shared.impact(style: .light)
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            showFontSizeSlider = true
+                        }
+                    } label: {
+                        Text("Aa")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 44)
                     }
                 }
-                .transition(.scale.combined(with: .opacity))
-                .padding(.horizontal, 24)
-                .padding(.vertical, 16)
             } else {
-                // Font size slider
                 fontSizeSlider()
-                    .transition(.scale.combined(with: .opacity))
             }
         }
+        .background(
+            Color.black
+                .overlay(
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 1),
+                    alignment: .top
+                )
+        )
     }
 
     private func fontSizeSlider() -> some View {
@@ -895,6 +919,31 @@ struct ContentView: View {
         .padding(.horizontal, 24)
     }
     
+    private func handleScrollOffset(_ offset: CGFloat) {
+        guard !ignoreScrollOffsets else {
+            lastScrollOffset = offset
+            return
+        }
+
+        let delta = offset - lastScrollOffset
+
+        if delta < -10 {
+            lastScrollOffset = offset
+            if isHeaderVisible {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isHeaderVisible = false
+                }
+            }
+        } else if delta > 10 {
+            lastScrollOffset = offset
+            if !isHeaderVisible {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isHeaderVisible = true
+                }
+            }
+        }
+    }
+
     private func openNoteForVerse(_ verse: BibleVerse) {
         if let existingNote = viewModel.findNoteForVerse(verse, context: modelContext) {
             noteEditorMode = .editNote(existingNote)
@@ -1013,7 +1062,7 @@ struct ContentView: View {
                     showChapterPicker = true
                 } label: {
                     HStack(spacing: 4) {
-                        Text("\(String(localized: "common.chapter_abbrev")) \(viewModel.selectedChapter)")
+                        Text("\(viewModel.selectedChapter)")
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
                         Image(systemName: "chevron.down")
@@ -1030,6 +1079,21 @@ struct ContentView: View {
                 .fixedSize()
 
                 Spacer()
+
+                // Daily verse button
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    showDailyVerse = true
+                } label: {
+                    Image(systemName: "sun.max.fill")
+                        .font(.system(size: headerFontSize * 0.7))
+                        .foregroundColor(.white)
+                        .frame(width: 36, height: 36)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(Color(.systemGray6))
+                        )
+                }
 
                 // Speaker button
                 Button {
@@ -1084,109 +1148,86 @@ struct ContentView: View {
         }
     }
 
-    // MARK: - iPad Floating Buttons
-    private func iPadFloatingButtons() -> some View {
-        HStack {
-            HStack(spacing: 20) {
-                // Settings
-                Button {
-                    HapticManager.shared.impact(style: .light)
-                    showSettings = true
-                } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-
-                // Reading history
-                Button {
-                    HapticManager.shared.impact(style: .light)
-                    showReadingHistory = true
-                } label: {
-                    Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-
-                // Daily verse
-                Button {
-                    HapticManager.shared.impact(style: .light)
-                    showDailyVerse = true
-                } label: {
-                    Image(systemName: "sun.max.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
-
-                // Reading progress
-                Button {
-                    HapticManager.shared.impact(style: .light)
-                    showReadingProgress = true
-                } label: {
-                    Image(systemName: "chart.bar.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
+    // MARK: - iPad Footer Bar
+    private func iPadFooterBar(geometry: GeometryProxy) -> some View {
+        HStack(spacing: 0) {
+            // Settings
+            Button {
+                HapticManager.shared.impact(style: .light)
+                showSettings = true
+            } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
             }
 
-            Spacer()
+            // Reading history
+            Button {
+                HapticManager.shared.impact(style: .light)
+                showReadingHistory = true
+            } label: {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+            }
 
-            HStack(spacing: 20) {
-                // Notes
-                NavigationLink {
-                    NotesView { bookName, chapterNumber, verseNumber in
-                        viewModel.suppressChapterReset = true
-                        viewModel.selectedBook = bookName
-                        viewModel.selectedChapter = chapterNumber
-                        scrollToVerse = verseNumber
-                    }
-                } label: {
-                    Image(systemName: "note.text")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
-                }
+            // Reading progress
+            Button {
+                HapticManager.shared.impact(style: .light)
+                showReadingProgress = true
+            } label: {
+                Image(systemName: "chart.bar.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+            }
 
-                // Bookmarks
-                NavigationLink {
-                    HighlightedVersesView { bookName, chapterNumber, verseNumber in
-                        viewModel.suppressChapterReset = true
-                        viewModel.selectedBook = bookName
-                        viewModel.selectedChapter = chapterNumber
-                        scrollToVerse = verseNumber
-                    }
-                } label: {
-                    Image(systemName: "bookmark.fill")
-                        .font(.system(size: 22))
-                        .foregroundColor(.white)
-                        .frame(width: 56, height: 56)
-                        .background(.ultraThinMaterial)
-                        .clipShape(Circle())
-                        .shadow(color: .black.opacity(0.3), radius: 8, x: 0, y: 4)
+            // Notes
+            NavigationLink {
+                NotesView { bookName, chapterNumber, verseNumber in
+                    viewModel.suppressChapterReset = true
+                    viewModel.selectedBook = bookName
+                    viewModel.selectedChapter = chapterNumber
+                    scrollToVerse = verseNumber
                 }
+            } label: {
+                Image(systemName: "note.text")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+            }
+
+            // Bookmarks
+            NavigationLink {
+                HighlightedVersesView { bookName, chapterNumber, verseNumber in
+                    viewModel.suppressChapterReset = true
+                    viewModel.selectedBook = bookName
+                    viewModel.selectedChapter = chapterNumber
+                    scrollToVerse = verseNumber
+                }
+            } label: {
+                Image(systemName: "bookmark.fill")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
             }
         }
-        .padding(.horizontal, 24)
-        .padding(.vertical, 16)
+        .background(
+            Color.black
+                .overlay(
+                    Rectangle()
+                        .fill(Color.gray.opacity(0.2))
+                        .frame(height: 1),
+                    alignment: .top
+                )
+        )
     }
 
     private var currentTransition: AnyTransition {

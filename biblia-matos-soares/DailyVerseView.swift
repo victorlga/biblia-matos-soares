@@ -118,7 +118,7 @@ struct DailyVerseView: View {
                                 dismiss()
                             } label: {
                                 VStack(spacing: 6) {
-                                    Image(systemName: "book.open")
+                                    Image(systemName: "book.closed")
                                         .font(.system(size: 22))
                                     Text(String(localized: "common.open"))
                                         .font(.system(size: 13, design: .serif))

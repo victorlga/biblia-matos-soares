@@ -197,7 +197,7 @@ struct HighlightedVersesView: View {
                                                             HapticManager.shared.impact(style: .light)
                                                             openVerse(verse)
                                                         } label: {
-                                                            Label(String(localized: "common.open"), systemImage: "book.open")
+                                                            Label(String(localized: "common.open"), systemImage: "book.closed")
                                                         }
 
                                                         Button(role: .destructive) {
