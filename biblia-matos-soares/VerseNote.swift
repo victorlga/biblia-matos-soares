@@ -10,6 +10,8 @@ final class VerseNote {
     var createdAt: Date
     var updatedAt: Date
 
+    var verse: BibleVerse?
+
     init(bookName: String, chapterNumber: Int, verseNumber: Int, noteText: String) {
         self.bookName = bookName
         self.chapterNumber = chapterNumber

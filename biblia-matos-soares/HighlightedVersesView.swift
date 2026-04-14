@@ -1,6 +1,5 @@
 import SwiftUI
 import SwiftData
-import UIKit
 
 // Estrutura auxiliar para agrupar versículos por capítulo
 struct GroupedChapter: Identifiable {
@@ -15,15 +14,17 @@ struct HighlightedVersesView: View {
     @Environment(\.dismiss) private var dismiss
 
     @Query private var highlightedVerses: [BibleVerse]
+
+    @State private var selectedColorFilter: String? = nil
     
     // Callback para navegar para um versículo específico no ContentView
-    var onNavigateToVerse: ((String, Int) -> Void)?
+    var onNavigateToVerse: ((String, Int, Int) -> Void)?
 
-    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+    init(onNavigateToVerse: ((String, Int, Int) -> Void)? = nil) {
         self.onNavigateToVerse = onNavigateToVerse
         _highlightedVerses = Query(
             filter: #Predicate<BibleVerse> { verse in
-                verse.isHighlighted == true
+                verse.highlightColor != nil
             },
             sort: [
                 SortDescriptor(\.bookName, comparator: .localizedStandard),
@@ -33,9 +34,16 @@ struct HighlightedVersesView: View {
         )
     }
 
-    // Ordena os versículos destacados com base na ordem da Bíblia
+    // Filtra e ordena os versículos destacados
     private var sortedHighlightedVerses: [BibleVerse] {
-        highlightedVerses.sorted { v1, v2 in
+        let filtered: [BibleVerse]
+        if let colorFilter = selectedColorFilter {
+            filtered = highlightedVerses.filter { $0.highlightColor == colorFilter }
+        } else {
+            filtered = Array(highlightedVerses)
+        }
+
+        return filtered.sorted { v1, v2 in
             let order1 = BibleData.bookOrderMap[v1.bookName] ?? 999
             let order2 = BibleData.bookOrderMap[v2.bookName] ?? 999
 
@@ -84,8 +92,7 @@ struct HighlightedVersesView: View {
                 // Barra superior personalizada
                 HStack {
                     Button {
-                        let generator = UIImpactFeedbackGenerator(style: .light)
-                        generator.impactOccurred()
+                        HapticManager.shared.impact(style: .light)
                         dismiss()
                     } label: {
                         Image(systemName: "chevron.left")
@@ -93,7 +100,7 @@ struct HighlightedVersesView: View {
                             .foregroundColor(.white)
                     }
 
-                    Text("Voltar")
+                    Text(String(localized: "common.back"))
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -111,9 +118,47 @@ struct HighlightedVersesView: View {
                         )
                 )
 
+                // Color filter chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        // "All" filter
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            selectedColorFilter = nil
+                        } label: {
+                            Text(String(localized: "common.all"))
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundColor(selectedColorFilter == nil ? .black : .white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(selectedColorFilter == nil ? Color.white : Color.gray.opacity(0.3))
+                                .cornerRadius(16)
+                        }
+
+                        ForEach(BibleVerse.availableColors, id: \.name) { option in
+                            Button {
+                                HapticManager.shared.impact(style: .light)
+                                selectedColorFilter = option.name
+                            } label: {
+                                Circle()
+                                    .fill(option.color.opacity(0.6))
+                                    .frame(width: 32, height: 32)
+                                    .overlay(
+                                        Circle()
+                                            .strokeBorder(selectedColorFilter == option.name ? Color.white : Color.clear, lineWidth: 2)
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                }
+
                 if sortedHighlightedVerses.isEmpty {
                     Spacer()
-                    Text("Nenhum versículo marcado. Toque e segure um versículo para marcá-lo.")
+                    Text(selectedColorFilter != nil
+                         ? String(localized: "highlights.no_verses_color")
+                         : String(localized: "highlights.no_verses"))
                         .font(.headline)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -145,23 +190,21 @@ struct HighlightedVersesView: View {
                                                     .frame(maxWidth: .infinity, alignment: .leading)
                                                     .padding(.horizontal, 16)
                                                     .padding(.vertical, 12)
-                                                    .background(Color.yellow.opacity(0.3))
+                                                    .background(verse.highlightSwiftUIColor ?? Color.yellow.opacity(0.3))
                                                     .cornerRadius(8)
                                                     .contextMenu {
                                                         Button {
-                                                            let generator = UIImpactFeedbackGenerator(style: .light)
-                                                            generator.impactOccurred()
+                                                            HapticManager.shared.impact(style: .light)
                                                             openVerse(verse)
                                                         } label: {
-                                                            Label("Abrir", systemImage: "book.open")
+                                                            Label(String(localized: "common.open"), systemImage: "book.open")
                                                         }
 
                                                         Button(role: .destructive) {
-                                                            let generator = UIImpactFeedbackGenerator(style: .medium)
-                                                            generator.impactOccurred()
-                                                            toggleHighlight(for: verse)
+                                                            HapticManager.shared.impact(style: .medium)
+                                                            removeHighlight(for: verse)
                                                         } label: {
-                                                            Label("Desmarcar", systemImage: "bookmark.slash")
+                                                            Label(String(localized: "context.remove_highlight"), systemImage: "bookmark.slash")
                                                         }
                                                     }
                                             }
@@ -183,16 +226,16 @@ struct HighlightedVersesView: View {
 
     // Função para abrir um versículo no ContentView
     private func openVerse(_ verse: BibleVerse) {
-        onNavigateToVerse?(verse.bookName, verse.chapterNumber)
+        onNavigateToVerse?(verse.bookName, verse.chapterNumber, verse.verseNumber)
         dismiss()
     }
 
-    // Alterna o destaque do versículo e salva
-    private func toggleHighlight(for verse: BibleVerse) {
-        verse.isHighlighted.toggle()
+    // Remove o destaque do versículo
+    private func removeHighlight(for verse: BibleVerse) {
+        verse.highlightColor = nil
+        verse.isHighlighted = false
         do {
             try modelContext.save()
-            print("Highlight toggled for verse \(verse.verseNumber) in \(verse.bookName) \(verse.chapterNumber)")
         } catch {
             print("Failed to save highlight change: \(error.localizedDescription)")
         }

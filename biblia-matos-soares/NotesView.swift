@@ -20,7 +20,7 @@ struct NotesView: View {
     @State private var noteToEdit: VerseNote?
     
     // Callback para navegar para um versículo específico no ContentView
-    var onNavigateToVerse: ((String, Int) -> Void)?
+    var onNavigateToVerse: ((String, Int, Int) -> Void)?
     
     private var headerFontSize: CGFloat {
         switch horizontalSizeClass {
@@ -38,7 +38,7 @@ struct NotesView: View {
         }
     }
     
-    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+    init(onNavigateToVerse: ((String, Int, Int) -> Void)? = nil) {
         self.onNavigateToVerse = onNavigateToVerse
         _allNotes = Query(
             sort: [
@@ -108,7 +108,7 @@ struct NotesView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text("Notas")
+                    Text(String(localized: "notes.title"))
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -127,7 +127,7 @@ struct NotesView: View {
                 
                 if sortedNotes.isEmpty {
                     Spacer()
-                    Text("Nenhuma nota criada. Toque e segure um versículo para criar uma nota.")
+                    Text(String(localized: "notes.empty"))
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -140,7 +140,7 @@ struct NotesView: View {
                                 VStack(alignment: .leading, spacing: 0) {
                                     // Header do capítulo
                                     HStack {
-                                        Text("\(group.bookName), Cap. \(group.chapterNumber)")
+                                        Text("\(group.bookName), \(String(localized: "common.chapter_abbrev")) \(group.chapterNumber)")
                                             .font(.system(size: bodyFontSize * 1.1, weight: .bold, design: .serif))
                                             .foregroundColor(.white)
                                         Spacer()
@@ -153,7 +153,7 @@ struct NotesView: View {
                                         ForEach(group.notes) { note in
                                             VStack(alignment: .leading, spacing: 8) {
                                                 HStack {
-                                                    Text("Versículo \(note.verseNumber)")
+                                                    Text("\(String(localized: "notes.verse_label")) \(note.verseNumber)")
                                                         .font(.system(size: bodyFontSize * 0.85, weight: .semibold, design: .serif))
                                                         .foregroundColor(.secondary)
                                                     
@@ -181,21 +181,21 @@ struct NotesView: View {
                                                     HapticManager.shared.impact(style: .light)
                                                     openVerse(note)
                                                 } label: {
-                                                    Label("Abrir Versículo", systemImage: "book.open")
+                                                    Label(String(localized: "notes.open_verse"), systemImage: "book.open")
                                                 }
 
                                                 Button {
                                                     HapticManager.shared.impact(style: .light)
                                                     noteToEdit = note
                                                 } label: {
-                                                    Label("Editar", systemImage: "pencil")
+                                                    Label(String(localized: "common.edit"), systemImage: "pencil")
                                                 }
 
                                                 Button(role: .destructive) {
                                                     HapticManager.shared.notification(type: .warning)
                                                     deleteNote(note)
                                                 } label: {
-                                                    Label("Excluir", systemImage: "trash")
+                                                    Label(String(localized: "common.delete"), systemImage: "trash")
                                                 }
                                             }
                                             .onTapGesture {
@@ -222,7 +222,7 @@ struct NotesView: View {
     }
     
     private func openVerse(_ note: VerseNote) {
-        onNavigateToVerse?(note.bookName, note.chapterNumber)
+        onNavigateToVerse?(note.bookName, note.chapterNumber, note.verseNumber)
         dismiss()
     }
     
@@ -239,7 +239,7 @@ struct NotesView: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         formatter.timeStyle = .short
-        formatter.locale = Locale(identifier: "pt_BR")
+        formatter.locale = .current
         return formatter.string(from: date)
     }
 }

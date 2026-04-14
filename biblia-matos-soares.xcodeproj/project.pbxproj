@@ -12,9 +12,20 @@
 		570AFA0D2E7C9D9200AF459C /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = 570AFA0C2E7C9D9200AF459C /* FirebaseMessaging */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		DE000009AAAA000000000009 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 5776D21D2DF9022600CFDACC /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 5776D2242DF9022600CFDACC;
+			remoteInfo = "biblia-matos-soares";
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		570AFA072E7C9AD600AF459C /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		57D23B652DFB3338004D8445 /* Bíblia Matos Soares.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Bíblia Matos Soares.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		DE000001AAAA000000000001 /* biblia-matos-soaresTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "biblia-matos-soaresTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -26,6 +37,11 @@
 		5776D2472DFB253300CFDACC /* data */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = data;
+			sourceTree = "<group>";
+		};
+		DE000002AAAA000000000002 /* biblia-matos-soaresTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = "biblia-matos-soaresTests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -40,6 +56,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DE000003AAAA000000000003 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -50,6 +73,8 @@
 				5776D2472DFB253300CFDACC /* data */,
 				57D23B652DFB3338004D8445 /* Bíblia Matos Soares.app */,
 				570AFA072E7C9AD600AF459C /* GoogleService-Info.plist */,
+				DE000002AAAA000000000002 /* biblia-matos-soaresTests */,
+				DE000001AAAA000000000001 /* biblia-matos-soaresTests.xctest */,
 			);
 			sourceTree = "<group>";
 		};
@@ -81,6 +106,26 @@
 			productReference = 57D23B652DFB3338004D8445 /* Bíblia Matos Soares.app */;
 			productType = "com.apple.product-type.application";
 		};
+		DE000005AAAA000000000005 /* biblia-matos-soaresTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = DE000008AAAA000000000008 /* Build configuration list for PBXNativeTarget "biblia-matos-soaresTests" */;
+			buildPhases = (
+				DE000004AAAA000000000004 /* Sources */,
+				DE000003AAAA000000000003 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				DE00000AAAAA00000000000A /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				DE000002AAAA000000000002 /* biblia-matos-soaresTests */,
+			);
+			name = "biblia-matos-soaresTests";
+			productName = "biblia-matos-soaresTests";
+			productReference = DE000001AAAA000000000001 /* biblia-matos-soaresTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -94,6 +139,10 @@
 					5776D2242DF9022600CFDACC = {
 						CreatedOnToolsVersion = 16.4;
 					};
+					DE000005AAAA000000000005 = {
+						CreatedOnToolsVersion = 16.4;
+						TestTargetID = 5776D2242DF9022600CFDACC;
+					};
 				};
 			};
 			buildConfigurationList = 5776D2202DF9022600CFDACC /* Build configuration list for PBXProject "biblia-matos-soares" */;
@@ -101,6 +150,7 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				"pt-BR",
 				Base,
 			);
 			mainGroup = 5776D21C2DF9022600CFDACC;
@@ -114,6 +164,7 @@
 			projectRoot = "";
 			targets = (
 				5776D2242DF9022600CFDACC /* biblia-matos-soares */,
+				DE000005AAAA000000000005 /* biblia-matos-soaresTests */,
 			);
 		};
 /* End PBXProject section */
@@ -137,7 +188,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		DE000004AAAA000000000004 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		DE00000AAAAA00000000000A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 5776D2242DF9022600CFDACC /* biblia-matos-soares */;
+			targetProxy = DE000009AAAA000000000009 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		5776D2302DF9022700CFDACC /* Debug */ = {
@@ -283,6 +349,7 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.victorassis.biblia-matos-soares";
+				PRODUCT_MODULE_NAME = biblia_matos_soares;
 				PRODUCT_NAME = "Bíblia Matos Soares";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
@@ -314,12 +381,57 @@
 				);
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "com.victorassis.biblia-matos-soares";
+				PRODUCT_MODULE_NAME = biblia_matos_soares;
 				PRODUCT_NAME = "Bíblia Matos Soares";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
 				SUPPORTS_MACCATALYST = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		DE000006AAAA000000000006 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NFTGLRJ8QH;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.victorassis.biblia-matos-soaresTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/B\U00edblia Matos Soares.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/B\U00edblia Matos Soares";
+			};
+			name = Debug;
+		};
+		DE000007AAAA000000000007 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				ENABLE_TESTING_SEARCH_PATHS = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = NFTGLRJ8QH;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = "com.victorassis.biblia-matos-soaresTests";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/B\U00edblia Matos Soares.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/B\U00edblia Matos Soares";
 			};
 			name = Release;
 		};
@@ -340,6 +452,15 @@
 			buildConfigurations = (
 				5776D2332DF9022700CFDACC /* Debug */,
 				5776D2342DF9022700CFDACC /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		DE000008AAAA000000000008 /* Build configuration list for PBXNativeTarget "biblia-matos-soaresTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DE000006AAAA000000000006 /* Debug */,
+				DE000007AAAA000000000007 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

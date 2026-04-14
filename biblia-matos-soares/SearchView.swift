@@ -9,9 +9,11 @@ struct SearchView: View {
     
     @State private var searchText: String = ""
     @State private var searchResults: [BibleVerse] = []
+    @State private var searchTask: Task<Void, Never>?
+    @State private var isSearching: Bool = false
     
     // Callback para navegar para um versículo específico no ContentView
-    var onNavigateToVerse: ((String, Int) -> Void)?
+    var onNavigateToVerse: ((String, Int, Int) -> Void)?
     
     private var headerFontSize: CGFloat {
         switch horizontalSizeClass {
@@ -29,7 +31,7 @@ struct SearchView: View {
         }
     }
     
-    init(onNavigateToVerse: ((String, Int) -> Void)? = nil) {
+    init(onNavigateToVerse: ((String, Int, Int) -> Void)? = nil) {
         self.onNavigateToVerse = onNavigateToVerse
     }
     
@@ -49,7 +51,7 @@ struct SearchView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text("Buscar")
+                    Text(String(localized: "search.title"))
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -72,13 +74,18 @@ struct SearchView: View {
                         .foregroundColor(.secondary)
                         .padding(.leading, 12)
                     
-                    TextField("Buscar versículos...", text: $searchText)
+                    TextField(String(localized: "search.placeholder"), text: $searchText)
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.primary)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
                         .onChange(of: searchText) { _, newValue in
-                            performSearch(query: newValue)
+                            searchTask?.cancel()
+                            searchTask = Task {
+                                try? await Task.sleep(nanoseconds: 300_000_000)
+                                guard !Task.isCancelled else { return }
+                                await performSearch(query: newValue)
+                            }
                         }
                     
                     if !searchText.isEmpty {
@@ -105,14 +112,19 @@ struct SearchView: View {
                 // Resultados
                 if searchText.isEmpty {
                     Spacer()
-                    Text("Digite para buscar versículos")
+                    Text(String(localized: "search.empty_prompt"))
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
                     Spacer()
+                } else if isSearching {
+                    Spacer()
+                    ProgressView()
+                        .tint(.gray)
+                    Spacer()
                 } else if searchResults.isEmpty {
                     Spacer()
-                    Text("Nenhum resultado encontrado")
+                    Text(String(localized: "search.no_results"))
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -157,16 +169,25 @@ struct SearchView: View {
         .navigationBarBackButtonHidden(true)
     }
     
-    private func performSearch(query: String) {
+    @MainActor
+    private func performSearch(query: String) async {
         guard !query.trimmingCharacters(in: .whitespaces).isEmpty else {
             searchResults = []
+            isSearching = false
             return
         }
-        
+
+        isSearching = true
         let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
-        
-        do {
-            let descriptor = FetchDescriptor<BibleVerse>(
+        let container = modelContext.container
+
+        // Fetch PersistentIdentifiers on background context to avoid
+        // cross-context access of SwiftData model objects.
+        let identifiers: [PersistentIdentifier] = await Task.detached {
+            let backgroundContext = ModelContext(container)
+            backgroundContext.autosaveEnabled = false
+
+            var descriptor = FetchDescriptor<BibleVerse>(
                 predicate: #Predicate { verse in
                     verse.text.localizedStandardContains(trimmedQuery)
                 },
@@ -176,22 +197,29 @@ struct SearchView: View {
                     SortDescriptor(\.verseNumber, order: .forward)
                 ]
             )
-            
-            // Limitar resultados para performance (primeiros 100)
-            var results = try modelContext.fetch(descriptor)
-            if results.count > 100 {
-                results = Array(results.prefix(100))
+            descriptor.fetchLimit = 100
+
+            do {
+                let results = try backgroundContext.fetch(descriptor)
+                return results.map { $0.persistentModelID }
+            } catch {
+                print("Erro ao buscar: \(error.localizedDescription)")
+                return []
             }
-            
-            searchResults = results
-        } catch {
-            print("Erro ao buscar: \(error.localizedDescription)")
-            searchResults = []
+        }.value
+
+        guard !Task.isCancelled else { return }
+
+        // Re-fetch from main context so model objects are safe to use on main thread
+        let mainResults = identifiers.compactMap { id in
+            modelContext.model(for: id) as? BibleVerse
         }
+        searchResults = mainResults
+        isSearching = false
     }
     
     private func openVerse(_ verse: BibleVerse) {
-        onNavigateToVerse?(verse.bookName, verse.chapterNumber)
+        onNavigateToVerse?(verse.bookName, verse.chapterNumber, verse.verseNumber)
         dismiss()
     }
 }
