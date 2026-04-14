@@ -26,6 +26,8 @@ struct ContentView: View {
     @State private var showSettings: Bool = false
     @State private var showReadingHistory: Bool = false
     @State private var showDailyVerse: Bool = false
+    @State private var showBookPicker: Bool = false
+    @State private var showChapterPicker: Bool = false
 
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
@@ -160,18 +162,21 @@ struct ContentView: View {
                                         }
                                     }
                             )
-                            .onChange(of: viewModel.selectedBook) { _, _ in
-                                if viewModel.speechSynthesizer.isSpeaking {
-                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
-                                }
-                                withAnimation(.easeOut(duration: 0.3)) {
-                                    viewModel.selectedChapter = 1
-                                    let targetVerse = scrollToVerse ?? 1
-                                    scrollToVerse = nil
-                                    proxy.scrollTo(targetVerse, anchor: .top)
-                                    viewModel.syncBookToStorage()
-                                }
-                            }
+                                            .onChange(of: viewModel.selectedBook) { _, _ in
+                                                if viewModel.speechSynthesizer.isSpeaking {
+                                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                                                }
+                                                let maxChapter = BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1
+                                                withAnimation(.easeOut(duration: 0.3)) {
+                                                    if viewModel.selectedChapter > maxChapter {
+                                                        viewModel.selectedChapter = 1
+                                                    }
+                                                    let targetVerse = scrollToVerse ?? 1
+                                                    scrollToVerse = nil
+                                                    proxy.scrollTo(targetVerse, anchor: .top)
+                                                    viewModel.syncBookToStorage()
+                                                }
+                                            }
                             .onChange(of: viewModel.selectedChapter) { _, _ in
                                 if viewModel.speechSynthesizer.isSpeaking {
                                     viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
@@ -226,6 +231,12 @@ struct ContentView: View {
                     SettingsView(hapticFeedbackEnabled: $hapticFeedbackEnabled)
                         .presentationDetents([.height(260)])
                         .presentationDragIndicator(.visible)
+                }
+                .sheet(isPresented: $showBookPicker) {
+                    bookPickerSheet()
+                }
+                .sheet(isPresented: $showChapterPicker) {
+                    chapterPickerSheet()
                 }
                 .navigationDestination(isPresented: $showReadingHistory) {
                     ReadingHistoryView { bookName, chapterNumber, verseNumber in
@@ -332,12 +343,8 @@ struct ContentView: View {
         VStack(spacing: 0) {
             HStack(spacing: geometry.size.width * 0.02) {
                 // Book selector
-                Menu {
-                    ForEach(BibleData.orderedBookNames, id: \.self) { book in
-                        Button(book) {
-                            viewModel.selectedBook = book
-                        }
-                    }
+                Button {
+                    showBookPicker = true
                 } label: {
                     HStack {
                         Text(viewModel.selectedBook)
@@ -357,12 +364,8 @@ struct ContentView: View {
                 }
 
                 // Chapter selector
-                Menu {
-                    ForEach(1..<(BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1) + 1, id: \.self) { chapter in
-                        Button("Capítulo \(chapter)") {
-                            viewModel.selectedChapter = chapter
-                        }
-                    }
+                Button {
+                    showChapterPicker = true
                 } label: {
                     HStack(spacing: 4) {
                         Text("Cap. \(viewModel.selectedChapter)")
@@ -602,6 +605,103 @@ struct ContentView: View {
         if let existingNote = viewModel.findNoteForVerse(verse, context: modelContext) {
             noteEditorMode = .editNote(existingNote)
         }
+    }
+
+    // MARK: - Book Picker Sheet
+    private func bookPickerSheet() -> some View {
+        NavigationStack {
+            ScrollViewReader { scrollProxy in
+                List {
+                    ForEach(BibleData.orderedBookNames, id: \.self) { book in
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            viewModel.selectedBook = book
+                            showBookPicker = false
+                        } label: {
+                            HStack {
+                                Text(book)
+                                    .font(.system(size: 17, weight: book == viewModel.selectedBook ? .bold : .regular, design: .serif))
+                                    .foregroundColor(book == viewModel.selectedBook ? .accentColor : .primary)
+                                Spacer()
+                                if book == viewModel.selectedBook {
+                                    Image(systemName: "checkmark")
+                                        .foregroundColor(.accentColor)
+                                }
+                            }
+                        }
+                        .id(book)
+                    }
+                }
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation {
+                            scrollProxy.scrollTo(viewModel.selectedBook, anchor: .center)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Livro")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fechar") {
+                        showBookPicker = false
+                    }
+                }
+            }
+        }
+        .preferredColorScheme(.dark)
+    }
+
+    // MARK: - Chapter Picker Sheet
+    private func chapterPickerSheet() -> some View {
+        let totalChapters = BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1
+        let columns = [GridItem(.adaptive(minimum: 56))]
+
+        return NavigationStack {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    LazyVGrid(columns: columns, spacing: 12) {
+                        ForEach(1...totalChapters, id: \.self) { chapter in
+                            Button {
+                                HapticManager.shared.impact(style: .light)
+                                viewModel.selectedChapter = chapter
+                                showChapterPicker = false
+                            } label: {
+                                Text("\(chapter)")
+                                    .font(.system(size: 17, weight: chapter == viewModel.selectedChapter ? .bold : .regular, design: .serif))
+                                    .foregroundColor(chapter == viewModel.selectedChapter ? .white : .primary)
+                                    .frame(width: 56, height: 56)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(chapter == viewModel.selectedChapter ? Color.accentColor : Color(.systemGray5))
+                                    )
+                            }
+                            .id(chapter)
+                        }
+                    }
+                    .padding()
+                }
+                .onAppear {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                        withAnimation {
+                            scrollProxy.scrollTo(viewModel.selectedChapter, anchor: .center)
+                        }
+                    }
+                }
+            }
+            .navigationTitle("Capítulo")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Fechar") {
+                        showChapterPicker = false
+                    }
+                }
+            }
+        }
+        .presentationDetents(totalChapters > 30 ? [.medium, .large] : [.medium])
+        .preferredColorScheme(.dark)
     }
 
     private var currentTransition: AnyTransition {
