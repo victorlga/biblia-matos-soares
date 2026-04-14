@@ -1,5 +1,6 @@
 import SwiftUI
 import UIKit
+import AVFoundation
 
 // MARK: - Settings View
 struct SettingsView: View {
@@ -7,8 +8,10 @@ struct SettingsView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Binding var hapticFeedbackEnabled: Bool
+    @AppStorage("speechRate") private var speechRate: Double = 0.48
     @State private var showURLErrorAlert = false
     @State private var urlErrorMessage = ""
+    @State private var showVoiceHintAlert = false
 
     var body: some View {
         NavigationStack {
@@ -23,6 +26,30 @@ struct SettingsView: View {
                     Divider()
                         .background(Color.gray.opacity(0.3))
                         .padding(.horizontal)
+
+                    // Speech rate slider
+                    speechRateRow()
+
+                    Divider()
+                        .background(Color.gray.opacity(0.3))
+                        .padding(.horizontal)
+
+                    // Voice quality hint (only when default quality)
+                    if SpeechHelper.shouldShowVoiceQualityHint() {
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            showVoiceHintAlert = true
+                        } label: {
+                            settingsRow(
+                                icon: "speaker.wave.3.fill",
+                                title: "Melhorar voz de leitura"
+                            )
+                        }
+
+                        Divider()
+                            .background(Color.gray.opacity(0.3))
+                            .padding(.horizontal)
+                    }
 
                     // Rate on App Store
                     Button {
@@ -60,6 +87,11 @@ struct SettingsView: View {
         } message: {
             Text(urlErrorMessage)
         }
+        .alert("Melhorar voz de leitura", isPresented: $showVoiceHintAlert) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text("Para uma voz de leitura mais natural, vá em Ajustes > Acessibilidade > Conteúdo Falado > Vozes > Português (Brasil) e baixe a voz aprimorada ou premium.")
+        }
     }
 
     @ViewBuilder
@@ -93,6 +125,37 @@ struct SettingsView: View {
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func speechRateRow() -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                Image(systemName: "gauge.with.dots.needle.33percent")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(width: 28)
+
+                Text("Velocidade de leitura")
+                    .font(.system(size: 17, design: .default))
+                    .foregroundColor(.white)
+
+                Spacer()
+            }
+
+            Slider(
+                value: $speechRate,
+                in: 0.3...0.6,
+                onEditingChanged: { editing in
+                    if !editing {
+                        HapticManager.shared.impact(style: .light)
+                    }
+                }
+            )
+            .accentColor(.white)
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
     }
 
     private func rateOnAppStore() {
