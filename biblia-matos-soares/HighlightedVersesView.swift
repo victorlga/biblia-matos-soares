@@ -100,7 +100,7 @@ struct HighlightedVersesView: View {
                             .foregroundColor(.white)
                     }
 
-                    Text(String(localized: "common.back"))
+                    Text("Voltar")
                         .font(.title2)
                         .fontWeight(.bold)
                         .foregroundColor(.primary)
@@ -126,7 +126,7 @@ struct HighlightedVersesView: View {
                             HapticManager.shared.impact(style: .light)
                             selectedColorFilter = nil
                         } label: {
-                            Text(String(localized: "common.all"))
+                            Text("Todos")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(selectedColorFilter == nil ? .black : .white)
                                 .padding(.horizontal, 14)
@@ -157,8 +157,8 @@ struct HighlightedVersesView: View {
                 if sortedHighlightedVerses.isEmpty {
                     Spacer()
                     Text(selectedColorFilter != nil
-                         ? String(localized: "highlights.no_verses_color")
-                         : String(localized: "highlights.no_verses"))
+                         ? "Nenhum versículo marcado com esta cor."
+                         : "Nenhum versículo marcado. Toque e segure um versículo para marcá-lo.")
                         .font(.headline)
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -197,14 +197,14 @@ struct HighlightedVersesView: View {
                                                             HapticManager.shared.impact(style: .light)
                                                             openVerse(verse)
                                                         } label: {
-                                                            Label(String(localized: "common.open"), systemImage: "book.closed")
+                                                            Label("Abrir", systemImage: "book.closed")
                                                         }
 
                                                         Button(role: .destructive) {
                                                             HapticManager.shared.impact(style: .medium)
                                                             removeHighlight(for: verse)
                                                         } label: {
-                                                            Label(String(localized: "context.remove_highlight"), systemImage: "bookmark.slash")
+                                                            Label("Desmarcar", systemImage: "bookmark.slash")
                                                         }
                                                     }
                                             }

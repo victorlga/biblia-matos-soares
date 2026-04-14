@@ -6,11 +6,11 @@ import UniformTypeIdentifiers
 
 // MARK: - Settings View
 struct SettingsView: View {
-    private static var genericOpenErrorMessage: String { String(localized: "settings.url_error") }
+    private static var genericOpenErrorMessage: String { "Desculpe, não foi possível abrir o link." }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @Binding var hapticFeedbackEnabled: Bool
+    @AppStorage("fontSize") private var fontSize: Double = 17.0
     @AppStorage("speechRate") private var speechRate: Double = 0.48
     @State private var showURLErrorAlert = false
     @State private var urlErrorMessage = ""
@@ -24,12 +24,8 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                    // Haptic feedback toggle
-                    settingsRow(
-                        icon: "hand.tap.fill",
-                        title: String(localized: "settings.haptic_feedback"),
-                        showToggle: true
-                    )
+                    // Font size slider
+                    fontSizeRow()
 
                     Divider()
                         .background(Color.gray.opacity(0.3))
@@ -50,7 +46,7 @@ struct SettingsView: View {
                         } label: {
                             settingsRow(
                                 icon: "speaker.wave.3.fill",
-                                title: String(localized: "settings.improve_voice")
+                                title: "Melhorar voz de leitura"
                             )
                         }
 
@@ -66,7 +62,7 @@ struct SettingsView: View {
                     } label: {
                         settingsRow(
                             icon: "square.and.arrow.up",
-                            title: String(localized: "settings.export")
+                            title: "Exportar notas e marcações"
                         )
                     }
 
@@ -81,7 +77,7 @@ struct SettingsView: View {
                     } label: {
                         settingsRow(
                             icon: "square.and.arrow.down",
-                            title: String(localized: "settings.import")
+                            title: "Importar notas e marcações"
                         )
                     }
 
@@ -95,14 +91,14 @@ struct SettingsView: View {
                     } label: {
                         settingsRow(
                             icon: "star.fill",
-                            title: String(localized: "settings.rate_app")
+                            title: "Avaliar na App Store"
                         )
                     }
 
                 Spacer()
             }
             .padding(.top, 20)
-            .navigationTitle(String(localized: "settings.title"))
+            .navigationTitle("Configurações")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbar {
@@ -120,15 +116,15 @@ struct SettingsView: View {
             .preferredColorScheme(.dark)
         }
         .presentationBackground(.ultraThinMaterial)
-        .alert(String(localized: "settings.url_error_title"), isPresented: $showURLErrorAlert) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+        .alert("Não foi possível abrir o link", isPresented: $showURLErrorAlert) {
+            Button("OK", role: .cancel) {}
         } message: {
             Text(urlErrorMessage)
         }
-        .alert(String(localized: "settings.improve_voice"), isPresented: $showVoiceHintAlert) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+        .alert("Melhorar voz de leitura", isPresented: $showVoiceHintAlert) {
+            Button("OK", role: .cancel) {}
         } message: {
-            Text(String(localized: "settings.improve_voice_hint"))
+            Text("Para uma voz de leitura mais natural, vá em Ajustes > Acessibilidade > Conteúdo Falado > Vozes > Português (Brasil) e baixe a voz aprimorada ou premium.")
         }
         .fileImporter(
             isPresented: $showImportPicker,
@@ -142,28 +138,28 @@ struct SettingsView: View {
                     showImportConflictAlert = true
                 }
             case .failure(let error):
-                importResultMessage = String(format: String(localized: "import.file_select_error"), error.localizedDescription)
+                importResultMessage = String(format: "Erro ao selecionar arquivo: %@", error.localizedDescription)
                 showImportResultAlert = true
             }
         }
-        .alert(String(localized: "import.duplicate_title"), isPresented: $showImportConflictAlert) {
-            Button(String(localized: "import.keep_existing")) {
+        .alert("Notas duplicadas", isPresented: $showImportConflictAlert) {
+            Button("Manter existentes") {
                 performImport(resolution: .keepExisting)
             }
-            Button(String(localized: "import.overwrite")) {
+            Button("Sobrescrever") {
                 performImport(resolution: .overwrite)
             }
-            Button(String(localized: "import.append")) {
+            Button("Anexar") {
                 performImport(resolution: .append)
             }
-            Button(String(localized: "common.cancel"), role: .cancel) {
+            Button("Cancelar", role: .cancel) {
                 pendingImportURL = nil
             }
         } message: {
-            Text(String(localized: "import.duplicate_message"))
+            Text("Se já existir uma nota para o mesmo versículo, o que deseja fazer?")
         }
-        .alert(String(localized: "import.title"), isPresented: $showImportResultAlert) {
-            Button(String(localized: "common.ok"), role: .cancel) {}
+        .alert("Importação", isPresented: $showImportResultAlert) {
+            Button("OK", role: .cancel) {}
         } message: {
             Text(importResultMessage)
         }
@@ -172,8 +168,7 @@ struct SettingsView: View {
     @ViewBuilder
     private func settingsRow(
         icon: String,
-        title: String,
-        showToggle: Bool = false
+        title: String
     ) -> some View {
         HStack(spacing: 16) {
             Image(systemName: icon)
@@ -187,19 +182,55 @@ struct SettingsView: View {
 
             Spacer()
 
-            if showToggle {
-                Toggle("", isOn: $hapticFeedbackEnabled)
-                    .labelsHidden()
-                    .tint(.green)
-            } else {
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 14))
-                    .foregroundColor(.gray)
-            }
+            Image(systemName: "chevron.right")
+                .font(.system(size: 14))
+                .foregroundColor(.gray)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 16)
         .contentShape(Rectangle())
+    }
+
+    @ViewBuilder
+    private func fontSizeRow() -> some View {
+        VStack(spacing: 8) {
+            HStack(spacing: 16) {
+                Image(systemName: "textformat.size")
+                    .font(.system(size: 20))
+                    .foregroundColor(.white)
+                    .frame(width: 28)
+
+                Text("Tamanho da fonte")
+                    .font(.system(size: 17, design: .default))
+                    .foregroundColor(.white)
+
+                Spacer()
+            }
+
+            HStack(spacing: 12) {
+                Text("A")
+                    .font(.system(size: 14))
+                    .foregroundColor(.white.opacity(0.8))
+
+                Slider(
+                    value: $fontSize,
+                    in: 15...31,
+                    step: 2,
+                    onEditingChanged: { editing in
+                        if !editing {
+                            HapticManager.shared.impact(style: .light)
+                        }
+                    }
+                )
+                .accentColor(.white)
+
+                Text("A")
+                    .font(.system(size: 24, weight: .semibold))
+                    .foregroundColor(.white)
+            }
+        }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 16)
     }
 
     @ViewBuilder
@@ -211,7 +242,7 @@ struct SettingsView: View {
                     .foregroundColor(.white)
                     .frame(width: 28)
 
-                Text(String(localized: "settings.speech_rate"))
+                Text("Velocidade de leitura")
                     .font(.system(size: 17, design: .default))
                     .foregroundColor(.white)
 
@@ -244,17 +275,17 @@ struct SettingsView: View {
         defer { pendingImportURL = nil }
 
         guard url.startAccessingSecurityScopedResource() else {
-            importResultMessage = String(localized: "import.file_error")
+            importResultMessage = "Não foi possível acessar o arquivo."
             showImportResultAlert = true
             return
         }
         defer { url.stopAccessingSecurityScopedResource() }
 
         if let result = DataExportImportManager.importData(from: url, context: modelContext, noteConflict: resolution) {
-            importResultMessage = String(format: String(localized: "import.success"), result.notes, result.highlights)
+            importResultMessage = String(format: "Importação concluída: %d nota(s) e %d marcação(ões) importadas.", result.notes, result.highlights)
             HapticManager.shared.notification(type: .success)
         } else {
-            importResultMessage = String(localized: "import.error")
+            importResultMessage = "Erro ao importar os dados. Verifique se o arquivo é válido."
             HapticManager.shared.notification(type: .error)
         }
         showImportResultAlert = true

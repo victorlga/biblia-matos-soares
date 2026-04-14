@@ -46,14 +46,14 @@ struct NoteEditorView: View {
                         generator.impactOccurred()
                         dismiss()
                     } label: {
-                        Text(String(localized: "common.cancel"))
+                        Text("Cancelar")
                             .font(.system(size: bodyFontSize, design: .serif))
                             .foregroundColor(.secondary)
                     }
                     
                     Spacer()
                     
-                    Text(existingNote != nil ? String(localized: "note_editor.edit_title") : String(localized: "note_editor.new_title"))
+                    Text(existingNote != nil ? "Editar Nota" : "Nova Nota")
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -62,7 +62,7 @@ struct NoteEditorView: View {
                     Button {
                         saveNote()
                     } label: {
-                        Text(String(localized: "common.save"))
+                        Text("Salvar")
                             .font(.system(size: bodyFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.white)
                     }

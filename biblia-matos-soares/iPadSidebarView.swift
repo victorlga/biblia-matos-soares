@@ -29,20 +29,20 @@ struct iPadSidebarView: View {
                 }
             }
         )) {
-            Section(String(localized: "sidebar.old_testament")) {
+            Section("Antigo Testamento") {
                 ForEach(oldTestamentBooks, id: \.self) { book in
                     bookRow(book)
                 }
             }
 
-            Section(String(localized: "sidebar.new_testament")) {
+            Section("Novo Testamento") {
                 ForEach(newTestamentBooks, id: \.self) { book in
                     bookRow(book)
                 }
             }
         }
         .listStyle(.sidebar)
-        .navigationTitle(String(localized: "sidebar.books_title"))
+        .navigationTitle("Livros")
         .preferredColorScheme(.dark)
     }
 
@@ -54,7 +54,7 @@ struct iPadSidebarView: View {
             Spacer()
 
             if let chapters = BibleData.bookChapterCounts[book] {
-                Text("\(chapters) \(String(localized: "common.chapter_abbrev").lowercased())")
+                Text("\(chapters) cap.")
                     .font(.system(size: 12, design: .serif))
                     .foregroundColor(.secondary)
             }
