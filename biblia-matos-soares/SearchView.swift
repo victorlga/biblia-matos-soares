@@ -11,6 +11,10 @@ struct SearchView: View {
     @State private var searchResults: [BibleVerse] = []
     @State private var searchTask: Task<Void, Never>?
     @State private var isSearching: Bool = false
+    @FocusState private var isSearchFieldFocused: Bool
+    
+    // Recent searches persistence
+    @AppStorage("recentSearches") private var recentSearchesData: Data = Data()
     
     // Callback para navegar para um versículo específico no ContentView
     var onNavigateToVerse: ((String, Int, Int) -> Void)?
@@ -79,6 +83,7 @@ struct SearchView: View {
                         .foregroundColor(.primary)
                         .autocorrectionDisabled()
                         .textInputAutocapitalization(.never)
+                        .focused($isSearchFieldFocused)
                         .onChange(of: searchText) { _, newValue in
                             searchTask?.cancel()
                             searchTask = Task {
@@ -111,12 +116,16 @@ struct SearchView: View {
                 
                 // Resultados
                 if searchText.isEmpty {
-                    Spacer()
-                    Text("Digite para buscar versículos")
-                        .font(.system(size: bodyFontSize, design: .serif))
-                        .foregroundColor(.gray)
-                        .multilineTextAlignment(.center)
-                    Spacer()
+                    if recentSearches.isEmpty {
+                        Spacer()
+                        Text("Digite para buscar versículos")
+                            .font(.system(size: bodyFontSize, design: .serif))
+                            .foregroundColor(.gray)
+                            .multilineTextAlignment(.center)
+                        Spacer()
+                    } else {
+                        recentSearchesView
+                    }
                 } else if isSearching {
                     Spacer()
                     ProgressView()
@@ -130,6 +139,18 @@ struct SearchView: View {
                         .multilineTextAlignment(.center)
                     Spacer()
                 } else {
+                    // Result count header
+                    HStack {
+                        Text(searchResults.count >= 100
+                            ? "Primeiros 100 resultados"
+                            : "\(searchResults.count) resultado\(searchResults.count == 1 ? "" : "s")")
+                            .font(.system(size: bodyFontSize * 0.8, design: .serif))
+                            .foregroundColor(.secondary)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.top, 8)
+                    
                     ScrollView {
                         LazyVStack(spacing: 12) {
                             ForEach(searchResults) { verse in
@@ -141,7 +162,7 @@ struct SearchView: View {
                                         Spacer()
                                     }
                                     
-                                    Text(verse.text)
+                                    highlightedText(verse.text, query: searchText)
                                         .font(.system(size: bodyFontSize, design: .serif))
                                         .foregroundColor(.primary)
                                         .lineSpacing(4)
@@ -162,11 +183,122 @@ struct SearchView: View {
                         .padding(.top, 8)
                         .padding(.bottom, 32)
                     }
+                    .scrollDismissesKeyboard(.interactively)
                 }
             }
         }
         .preferredColorScheme(.dark)
         .navigationBarBackButtonHidden(true)
+        .onAppear {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                isSearchFieldFocused = true
+            }
+        }
+    }
+    
+    // MARK: - Recent Searches
+    
+    private var recentSearches: [String] {
+        (try? JSONDecoder().decode([String].self, from: recentSearchesData)) ?? []
+    }
+    
+    private func addToRecentSearches(_ query: String) {
+        var searches = recentSearches
+        searches.removeAll { $0.lowercased() == query.lowercased() }
+        searches.insert(query, at: 0)
+        if searches.count > 10 { searches = Array(searches.prefix(10)) }
+        recentSearchesData = (try? JSONEncoder().encode(searches)) ?? Data()
+    }
+    
+    private func clearRecentSearches() {
+        recentSearchesData = (try? JSONEncoder().encode([String]())) ?? Data()
+    }
+    
+    // MARK: - Recent Searches View
+    
+    private var recentSearchesView: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Text("Recentes")
+                    .font(.system(size: bodyFontSize * 0.9, weight: .semibold, design: .serif))
+                    .foregroundColor(.secondary)
+                Spacer()
+                Button {
+                    HapticManager.shared.impact(style: .light)
+                    clearRecentSearches()
+                } label: {
+                    Text("Limpar")
+                        .font(.system(size: bodyFontSize * 0.8, design: .serif))
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.top, 12)
+            .padding(.bottom, 8)
+            
+            ScrollView {
+                LazyVStack(spacing: 4) {
+                    ForEach(recentSearches, id: \.self) { query in
+                        Button {
+                            HapticManager.shared.impact(style: .light)
+                            searchText = query
+                        } label: {
+                            HStack {
+                                Image(systemName: "clock.arrow.circlepath")
+                                    .font(.system(size: bodyFontSize * 0.8))
+                                    .foregroundColor(.secondary)
+                                Text(query)
+                                    .font(.system(size: bodyFontSize, design: .serif))
+                                    .foregroundColor(.primary)
+                                    .lineLimit(1)
+                                Spacer()
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    // MARK: - Text Highlighting
+    
+    private func highlightedText(_ text: String, query: String) -> Text {
+        let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
+        guard !trimmedQuery.isEmpty else { return Text(text) }
+        
+        let lowercasedText = text.lowercased()
+        let lowercasedQuery = trimmedQuery.lowercased()
+        
+        var result = Text("")
+        var currentIndex = text.startIndex
+        var searchStart = lowercasedText.startIndex
+        
+        while searchStart < lowercasedText.endIndex {
+            guard let range = lowercasedText.range(of: lowercasedQuery, options: [.diacriticInsensitive], range: searchStart..<lowercasedText.endIndex) else {
+                break
+            }
+            
+            // Add text before match
+            if currentIndex < range.lowerBound {
+                result = result + Text(text[currentIndex..<range.lowerBound])
+            }
+            // Add highlighted match
+            result = result + Text(text[range])
+                .foregroundColor(.yellow)
+                .bold()
+            
+            currentIndex = range.upperBound
+            searchStart = range.upperBound
+        }
+        
+        // Add remaining text
+        if currentIndex < text.endIndex {
+            result = result + Text(text[currentIndex..<text.endIndex])
+        }
+        
+        return result
     }
     
     @MainActor
@@ -189,19 +321,23 @@ struct SearchView: View {
 
             var descriptor = FetchDescriptor<BibleVerse>(
                 predicate: #Predicate { verse in
-                    verse.text.localizedStandardContains(trimmedQuery)
-                },
-                sortBy: [
-                    SortDescriptor(\.bookName, comparator: .localizedStandard),
-                    SortDescriptor(\.chapterNumber, order: .forward),
-                    SortDescriptor(\.verseNumber, order: .forward)
-                ]
+                    verse.text.localizedStandardContains(trimmedQuery) ||
+                    verse.bookName.localizedStandardContains(trimmedQuery)
+                }
             )
             descriptor.fetchLimit = 100
 
             do {
                 let results = try backgroundContext.fetch(descriptor)
-                return results.map { $0.persistentModelID }
+                // Sort in canonical Bible order
+                let sorted = results.sorted { v1, v2 in
+                    let order1 = BibleData.bookOrderMap[v1.bookName] ?? 999
+                    let order2 = BibleData.bookOrderMap[v2.bookName] ?? 999
+                    if order1 != order2 { return order1 < order2 }
+                    if v1.chapterNumber != v2.chapterNumber { return v1.chapterNumber < v2.chapterNumber }
+                    return v1.verseNumber < v2.verseNumber
+                }
+                return sorted.map { $0.persistentModelID }
             } catch {
                 print("Erro ao buscar: \(error.localizedDescription)")
                 return []
@@ -216,6 +352,11 @@ struct SearchView: View {
         }
         searchResults = mainResults
         isSearching = false
+        
+        // Save to recent searches if we have results
+        if !mainResults.isEmpty {
+            addToRecentSearches(trimmedQuery)
+        }
     }
     
     private func openVerse(_ verse: BibleVerse) {
