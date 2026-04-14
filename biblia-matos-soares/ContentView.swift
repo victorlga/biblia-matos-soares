@@ -101,16 +101,28 @@ struct ContentView: View {
                         headerView(geometry: geometry)
 
                         ScrollViewReader { proxy in
-                            ScrollView {
-                                VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
-                                    if verses.isEmpty {
-                                        Text("Selecione um livro e um capítulo.")
+                                ScrollView {
+                                    VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
+                                        if !importStatus.isImportComplete {
+                                            VStack(spacing: 16) {
+                                                Spacer()
+                                                ProgressView()
+                                                    .tint(.gray)
+                                                Text("Carregando a Bíblia...")
                                                     .font(.system(size: headerFontSize, weight: .regular, design: .serif))
                                                     .foregroundColor(.gray)
-                                                    .multilineTextAlignment(.center)
-                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                                Spacer()
+                                            }
+                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                                    } else {
+                                        } else if verses.isEmpty {
+                                            Text("Selecione um livro e um capítulo.")
+                                                        .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                        .foregroundColor(.gray)
+                                                        .multilineTextAlignment(.center)
+                                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                                        } else {
                                         // Renderizar versículos com destaque contínuo
                                         versesWithContinuousHighlight(geometry: geometry)
                                     }

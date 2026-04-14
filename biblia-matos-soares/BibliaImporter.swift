@@ -23,32 +23,34 @@ class BibleImporter {
 
         do {
             let data = try Data(contentsOf: url)
-            
-            // Usando Codable para decodificar o JSON de forma mais segura e limpa
             let bibleBooksData = try JSONDecoder().decode([BibleBookImportData].self, from: data)
+            let totalBooks = bibleBooksData.count
 
-            for bookData in bibleBooksData {
-                let bookName = bookData.name
-                
-                for (chapterIndex, versesArray) in bookData.chapters.enumerated() {
-                    let chapterNumber = chapterIndex + 1 // Capítulos são baseados em 1
+            for (bookIndex, bookData) in bibleBooksData.enumerated() {
+                autoreleasepool {
+                    let bookName = bookData.name
 
-                    for verseData in versesArray {
-                        let verseNumber = verseData.verse
-                        let verseText = verseData.text
+                    for (chapterIndex, versesArray) in bookData.chapters.enumerated() {
+                        let chapterNumber = chapterIndex + 1
 
-                        let newVerse = BibleVerse(bookName: bookName,
-                                                  chapterNumber: chapterNumber,
-                                                  verseNumber: verseNumber,
-                                                  text: verseText)
-                        context.insert(newVerse)
+                        for verseData in versesArray {
+                            let newVerse = BibleVerse(bookName: bookName,
+                                                      chapterNumber: chapterNumber,
+                                                      verseNumber: verseData.verse,
+                                                      text: verseData.text)
+                            context.insert(newVerse)
+                        }
+                    }
+
+                    do {
+                        try context.save()
+                        print("📖 Importado \(bookName) (\(bookIndex + 1)/\(totalBooks))")
+                    } catch {
+                        print("❌ Erro ao salvar \(bookName): \(error)")
                     }
                 }
             }
 
-            // O SwiftData normalmente salva automaticamente.
-            // Chamar save() explicitamente aqui garante que todos os inserts sejam persistidos de uma vez.
-            try context.save()
             print("✅ Bíblia importada com sucesso: \(await countVerses()) versículos.")
 
         } catch {
