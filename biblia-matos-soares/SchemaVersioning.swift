@@ -50,7 +50,7 @@ enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
-        [BibleVerseV2.self, VerseNote.self]
+        [BibleVerseV2.self, VerseNoteV2.self]
     }
 
     @Model
@@ -61,14 +61,35 @@ enum SchemaV2: VersionedSchema {
         var text: String
         var isHighlighted: Bool = false
 
-        @Relationship(deleteRule: .cascade, inverse: \VerseNote.verse)
-        var notes: [VerseNote] = []
+        @Relationship(deleteRule: .cascade, inverse: \VerseNoteV2.verse)
+        var notes: [VerseNoteV2] = []
 
         init(bookName: String, chapterNumber: Int, verseNumber: Int, text: String) {
             self.bookName = bookName
             self.chapterNumber = chapterNumber
             self.verseNumber = verseNumber
             self.text = text
+        }
+    }
+
+    @Model
+    final class VerseNoteV2 {
+        var bookName: String
+        var chapterNumber: Int
+        var verseNumber: Int
+        var noteText: String
+        var createdAt: Date
+        var updatedAt: Date
+
+        var verse: BibleVerseV2?
+
+        init(bookName: String, chapterNumber: Int, verseNumber: Int, noteText: String) {
+            self.bookName = bookName
+            self.chapterNumber = chapterNumber
+            self.verseNumber = verseNumber
+            self.noteText = noteText
+            self.createdAt = Date()
+            self.updatedAt = Date()
         }
     }
 }
@@ -99,15 +120,15 @@ enum BibleMigrationPlan: SchemaMigrationPlan {
         // Lightweight migration handles adding the new relationship columns.
         // This willMigrate block runs before the schema change.
     } didMigrate: { context in
-        // After migration: link existing VerseNote records to their BibleVerse
+        // After migration: link existing VerseNoteV2 records to their BibleVerseV2
         // by matching on bookName + chapterNumber + verseNumber.
-        let notes = try context.fetch(FetchDescriptor<VerseNote>())
+        let notes = try context.fetch(FetchDescriptor<SchemaV2.VerseNoteV2>())
 
         for note in notes where note.verse == nil {
             let book = note.bookName
             let chapter = note.chapterNumber
             let verseNum = note.verseNumber
-            let descriptor = FetchDescriptor<BibleVerse>(
+            let descriptor = FetchDescriptor<SchemaV2.BibleVerseV2>(
                 predicate: #Predicate { verse in
                     verse.bookName == book &&
                     verse.chapterNumber == chapter &&

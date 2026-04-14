@@ -142,7 +142,7 @@ struct SettingsView: View {
                     showImportConflictAlert = true
                 }
             case .failure(let error):
-                importResultMessage = "Erro ao selecionar arquivo: \(error.localizedDescription)"
+                importResultMessage = String(format: String(localized: "import.file_select_error"), error.localizedDescription)
                 showImportResultAlert = true
             }
         }
