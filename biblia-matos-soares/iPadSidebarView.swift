@@ -29,20 +29,20 @@ struct iPadSidebarView: View {
                 }
             }
         )) {
-            Section("Antigo Testamento") {
+            Section(String(localized: "sidebar.old_testament")) {
                 ForEach(oldTestamentBooks, id: \.self) { book in
                     bookRow(book)
                 }
             }
 
-            Section("Novo Testamento") {
+            Section(String(localized: "sidebar.new_testament")) {
                 ForEach(newTestamentBooks, id: \.self) { book in
                     bookRow(book)
                 }
             }
         }
         .listStyle(.sidebar)
-        .navigationTitle("Livros")
+        .navigationTitle(String(localized: "sidebar.books_title"))
         .preferredColorScheme(.dark)
     }
 

@@ -6,7 +6,7 @@ import UniformTypeIdentifiers
 
 // MARK: - Settings View
 struct SettingsView: View {
-    private static let genericOpenErrorMessage = "Desculpe, não foi possível abrir o link."
+    private static var genericOpenErrorMessage: String { String(localized: "settings.url_error") }
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -27,7 +27,7 @@ struct SettingsView: View {
                     // Haptic feedback toggle
                     settingsRow(
                         icon: "hand.tap.fill",
-                        title: "Feedback tátil",
+                        title: String(localized: "settings.haptic_feedback"),
                         showToggle: true
                     )
 
@@ -50,7 +50,7 @@ struct SettingsView: View {
                         } label: {
                             settingsRow(
                                 icon: "speaker.wave.3.fill",
-                                title: "Melhorar voz de leitura"
+                                title: String(localized: "settings.improve_voice")
                             )
                         }
 
@@ -66,7 +66,7 @@ struct SettingsView: View {
                     } label: {
                         settingsRow(
                             icon: "square.and.arrow.up",
-                            title: "Exportar notas e marcações"
+                            title: String(localized: "settings.export")
                         )
                     }
 
@@ -81,7 +81,7 @@ struct SettingsView: View {
                     } label: {
                         settingsRow(
                             icon: "square.and.arrow.down",
-                            title: "Importar notas e marcações"
+                            title: String(localized: "settings.import")
                         )
                     }
 
@@ -95,14 +95,14 @@ struct SettingsView: View {
                     } label: {
                         settingsRow(
                             icon: "star.fill",
-                            title: "Avaliar na App Store"
+                            title: String(localized: "settings.rate_app")
                         )
                     }
 
                 Spacer()
             }
             .padding(.top, 20)
-            .navigationTitle("Configurações")
+            .navigationTitle(String(localized: "settings.title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
             .toolbar {
@@ -120,15 +120,15 @@ struct SettingsView: View {
             .preferredColorScheme(.dark)
         }
         .presentationBackground(.ultraThinMaterial)
-        .alert("Não foi possível abrir o link", isPresented: $showURLErrorAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(String(localized: "settings.url_error_title"), isPresented: $showURLErrorAlert) {
+            Button(String(localized: "common.ok"), role: .cancel) {}
         } message: {
             Text(urlErrorMessage)
         }
-        .alert("Melhorar voz de leitura", isPresented: $showVoiceHintAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(String(localized: "settings.improve_voice"), isPresented: $showVoiceHintAlert) {
+            Button(String(localized: "common.ok"), role: .cancel) {}
         } message: {
-            Text("Para uma voz de leitura mais natural, vá em Ajustes > Acessibilidade > Conteúdo Falado > Vozes > Português (Brasil) e baixe a voz aprimorada ou premium.")
+            Text(String(localized: "settings.improve_voice_hint"))
         }
         .fileImporter(
             isPresented: $showImportPicker,
@@ -146,24 +146,24 @@ struct SettingsView: View {
                 showImportResultAlert = true
             }
         }
-        .alert("Notas duplicadas", isPresented: $showImportConflictAlert) {
-            Button("Manter existentes") {
+        .alert(String(localized: "import.duplicate_title"), isPresented: $showImportConflictAlert) {
+            Button(String(localized: "import.keep_existing")) {
                 performImport(resolution: .keepExisting)
             }
-            Button("Sobrescrever") {
+            Button(String(localized: "import.overwrite")) {
                 performImport(resolution: .overwrite)
             }
-            Button("Anexar") {
+            Button(String(localized: "import.append")) {
                 performImport(resolution: .append)
             }
-            Button("Cancelar", role: .cancel) {
+            Button(String(localized: "common.cancel"), role: .cancel) {
                 pendingImportURL = nil
             }
         } message: {
-            Text("Se já existir uma nota para o mesmo versículo, o que deseja fazer?")
+            Text(String(localized: "import.duplicate_message"))
         }
-        .alert("Importação", isPresented: $showImportResultAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(String(localized: "import.title"), isPresented: $showImportResultAlert) {
+            Button(String(localized: "common.ok"), role: .cancel) {}
         } message: {
             Text(importResultMessage)
         }
@@ -211,7 +211,7 @@ struct SettingsView: View {
                     .foregroundColor(.white)
                     .frame(width: 28)
 
-                Text("Velocidade de leitura")
+                Text(String(localized: "settings.speech_rate"))
                     .font(.system(size: 17, design: .default))
                     .foregroundColor(.white)
 
@@ -244,17 +244,17 @@ struct SettingsView: View {
         defer { pendingImportURL = nil }
 
         guard url.startAccessingSecurityScopedResource() else {
-            importResultMessage = "Não foi possível acessar o arquivo."
+            importResultMessage = String(localized: "import.file_error")
             showImportResultAlert = true
             return
         }
         defer { url.stopAccessingSecurityScopedResource() }
 
         if let result = DataExportImportManager.importData(from: url, context: modelContext, noteConflict: resolution) {
-            importResultMessage = "Importação concluída: \(result.notes) nota(s) e \(result.highlights) marcação(ões) importadas."
+            importResultMessage = String(format: String(localized: "import.success"), result.notes, result.highlights)
             HapticManager.shared.notification(type: .success)
         } else {
-            importResultMessage = "Erro ao importar os dados. Verifique se o arquivo é válido."
+            importResultMessage = String(localized: "import.error")
             HapticManager.shared.notification(type: .error)
         }
         showImportResultAlert = true

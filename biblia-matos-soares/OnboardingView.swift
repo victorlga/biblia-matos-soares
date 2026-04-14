@@ -9,32 +9,32 @@ struct OnboardingView: View {
     private let features: [OnboardingFeature] = [
         OnboardingFeature(
             icon: "hand.tap.fill",
-            title: "Toque e Segure",
-            description: "Aperte e segure em qualquer versículo para ver opções como marcar, adicionar nota ou compartilhar.",
+            title: String(localized: "onboarding.feature1_title"),
+            description: String(localized: "onboarding.feature1_desc"),
             demoContent: .verse
         ),
         OnboardingFeature(
             icon: "note.text",
-            title: "Adicionar Nota",
-            description: "Escreva suas próprias anotações em cada versículo. Suas reflexões sempre ao alcance.",
+            title: String(localized: "onboarding.feature2_title"),
+            description: String(localized: "onboarding.feature2_desc"),
             demoContent: .none
         ),
         OnboardingFeature(
             icon: "bookmark.fill",
-            title: "Salvar Versículos",
-            description: "Salve versículos e encontre com facilidade mais tarde. Seus favoritos organizados.",
+            title: String(localized: "onboarding.feature3_title"),
+            description: String(localized: "onboarding.feature3_desc"),
             demoContent: .none
         ),
         OnboardingFeature(
             icon: "textformat.size",
-            title: "Ajuste de Fonte",
-            description: "Ajuste a fonte para o tamanho que preferir. Leitura confortável em qualquer momento.",
+            title: String(localized: "onboarding.feature4_title"),
+            description: String(localized: "onboarding.feature4_desc"),
             demoContent: .none
         ),
         OnboardingFeature(
             icon: "magnifyingglass",
-            title: "Busca",
-            description: "Encontre versículos digitando apenas uma palavra. A Bíblia inteira na ponta dos dedos.",
+            title: String(localized: "onboarding.feature5_title"),
+            description: String(localized: "onboarding.feature5_desc"),
             demoContent: .none
         )
     ]
@@ -46,13 +46,13 @@ struct OnboardingView: View {
 
             VStack(spacing: 0) {
                 // Header
-                Text("Bem-vindo")
+                Text(String(localized: "onboarding.welcome"))
                     .font(.system(size: 32, weight: .bold, design: .serif))
                     .foregroundColor(.white)
                     .padding(.top, 60)
                     .padding(.bottom, 10)
 
-                Text("Bíblia Matos Soares")
+                Text(String(localized: "onboarding.app_name"))
                     .font(.system(size: 18, weight: .medium, design: .serif))
                     .foregroundColor(.gray)
                     .padding(.bottom, 40)
@@ -86,7 +86,7 @@ struct OnboardingView: View {
                                 currentPage -= 1
                             }
                         } label: {
-                            Text("Anterior")
+                            Text(String(localized: "common.previous"))
                                 .font(.system(size: 16, weight: .medium))
                                 .foregroundColor(.gray)
                                 .padding(.horizontal, 30)
@@ -106,7 +106,7 @@ struct OnboardingView: View {
                             isPresented = false
                         }
                     } label: {
-                        Text(currentPage < features.count - 1 ? "Próximo" : "Começar")
+                        Text(currentPage < features.count - 1 ? String(localized: "common.next") : String(localized: "common.start"))
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.black)
                             .padding(.horizontal, 30)
@@ -197,19 +197,19 @@ struct FeatureCard: View {
                                 isHighlighted.toggle()
                             }
                         } label: {
-                            Label(isHighlighted ? "Desmarcar" : "Marcar", systemImage: isHighlighted ? "bookmark.slash" : "bookmark")
+                            Label(isHighlighted ? String(localized: "context.remove_highlight") : String(localized: "context.highlight"), systemImage: isHighlighted ? "bookmark.slash" : "bookmark")
                         }
                         Button {
                             HapticManager.shared.impact(style: .light)
                             showNoteEditor = true
                         } label: {
-                            Label("Adicionar Nota", systemImage: "note.text")
+                            Label(String(localized: "context.add_note"), systemImage: "note.text")
                         }
                         Button {
                             HapticManager.shared.impact(style: .light)
                             shareVerse()
                         } label: {
-                            Label("Compartilhar", systemImage: "square.and.arrow.up")
+                            Label(String(localized: "common.share"), systemImage: "square.and.arrow.up")
                         }
                     }
                     .onLongPressGesture(minimumDuration: 0.5) {
@@ -224,7 +224,7 @@ struct FeatureCard: View {
                         Image(systemName: "hand.tap.fill")
                             .font(.system(size: 16))
                             .foregroundColor(.yellow)
-                        Text("Aperte e segure para testar")
+                        Text(String(localized: "onboarding.tap_hint"))
                             .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.yellow)
                     }

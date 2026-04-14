@@ -51,7 +51,7 @@ struct SearchView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text("Buscar")
+                    Text(String(localized: "search.title"))
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -74,7 +74,7 @@ struct SearchView: View {
                         .foregroundColor(.secondary)
                         .padding(.leading, 12)
                     
-                    TextField("Buscar versículos...", text: $searchText)
+                    TextField(String(localized: "search.placeholder"), text: $searchText)
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.primary)
                         .autocorrectionDisabled()
@@ -112,7 +112,7 @@ struct SearchView: View {
                 // Resultados
                 if searchText.isEmpty {
                     Spacer()
-                    Text("Digite para buscar versículos")
+                    Text(String(localized: "search.empty_prompt"))
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -124,7 +124,7 @@ struct SearchView: View {
                     Spacer()
                 } else if searchResults.isEmpty {
                     Spacer()
-                    Text("Nenhum resultado encontrado")
+                    Text(String(localized: "search.no_results"))
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)

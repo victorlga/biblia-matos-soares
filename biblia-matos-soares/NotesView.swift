@@ -108,7 +108,7 @@ struct NotesView: View {
                             .foregroundColor(.white)
                     }
                     
-                    Text("Notas")
+                    Text(String(localized: "notes.title"))
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
                     
@@ -127,7 +127,7 @@ struct NotesView: View {
                 
                 if sortedNotes.isEmpty {
                     Spacer()
-                    Text("Nenhuma nota criada. Toque e segure um versículo para criar uma nota.")
+                    Text(String(localized: "notes.empty"))
                         .font(.system(size: bodyFontSize, design: .serif))
                         .foregroundColor(.gray)
                         .multilineTextAlignment(.center)
@@ -153,7 +153,7 @@ struct NotesView: View {
                                         ForEach(group.notes) { note in
                                             VStack(alignment: .leading, spacing: 8) {
                                                 HStack {
-                                                    Text("Versículo \(note.verseNumber)")
+                                                    Text("\(String(localized: "notes.verse_label")) \(note.verseNumber)")
                                                         .font(.system(size: bodyFontSize * 0.85, weight: .semibold, design: .serif))
                                                         .foregroundColor(.secondary)
                                                     
@@ -181,21 +181,21 @@ struct NotesView: View {
                                                     HapticManager.shared.impact(style: .light)
                                                     openVerse(note)
                                                 } label: {
-                                                    Label("Abrir Versículo", systemImage: "book.open")
+                                                    Label(String(localized: "notes.open_verse"), systemImage: "book.open")
                                                 }
 
                                                 Button {
                                                     HapticManager.shared.impact(style: .light)
                                                     noteToEdit = note
                                                 } label: {
-                                                    Label("Editar", systemImage: "pencil")
+                                                    Label(String(localized: "common.edit"), systemImage: "pencil")
                                                 }
 
                                                 Button(role: .destructive) {
                                                     HapticManager.shared.notification(type: .warning)
                                                     deleteNote(note)
                                                 } label: {
-                                                    Label("Excluir", systemImage: "trash")
+                                                    Label(String(localized: "common.delete"), systemImage: "trash")
                                                 }
                                             }
                                             .onTapGesture {

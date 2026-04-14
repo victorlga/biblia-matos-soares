@@ -174,81 +174,81 @@ struct ContentView: View {
                                         VStack(spacing: 16) {
                                             Spacer()
                                             ProgressView().tint(.gray)
-                                            Text("Carregando a Bíblia...")
-                                                .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                                .foregroundColor(.gray)
-                                            Spacer()
-                                        }
-                                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    } else if verses.isEmpty {
-                                        Text("Selecione um livro e um capítulo.")
-                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                            .foregroundColor(.gray)
-                                            .multilineTextAlignment(.center)
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
-                                    } else {
-                                        versesWithContinuousHighlight(geometry: geometry)
-                                    }
+                                                                Text(String(localized: "content.loading_bible"))
+                                                                    .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                                    .foregroundColor(.gray)
+                                                                Spacer()
+                                                            }
+                                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                                        } else if verses.isEmpty {
+                                                            Text(String(localized: "content.select_book_chapter"))
+                                                                .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                                .foregroundColor(.gray)
+                                                                .multilineTextAlignment(.center)
+                                                                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                                        } else {
+                                                            versesWithContinuousHighlight(geometry: geometry)
+                                                        }
 
-                                    if importStatus.isImportComplete && !verses.isEmpty {
-                                        Button {
-                                            HapticManager.shared.impact(style: .medium)
-                                            ReadingProgressView.markChapterAsRead(
-                                                bookName: viewModel.selectedBook,
-                                                chapterNumber: viewModel.selectedChapter,
-                                                context: modelContext
-                                            )
-                                        } label: {
-                                            HStack(spacing: 8) {
-                                                Image(systemName: "checkmark.circle")
-                                                    .font(.system(size: 16))
-                                                Text("Marcar capítulo como lido")
-                                                    .font(.system(size: 15, weight: .medium, design: .serif))
+                                                        if importStatus.isImportComplete && !verses.isEmpty {
+                                                            Button {
+                                                                HapticManager.shared.impact(style: .medium)
+                                                                ReadingProgressView.markChapterAsRead(
+                                                                    bookName: viewModel.selectedBook,
+                                                                    chapterNumber: viewModel.selectedChapter,
+                                                                    context: modelContext
+                                                                )
+                                                            } label: {
+                                                                HStack(spacing: 8) {
+                                                                    Image(systemName: "checkmark.circle")
+                                                                        .font(.system(size: 16))
+                                                                    Text(String(localized: "content.mark_chapter_read"))
+                                                                        .font(.system(size: 15, weight: .medium, design: .serif))
+                                                                }
+                                                                .foregroundColor(.green)
+                                                                .padding(.vertical, 12)
+                                                                .padding(.horizontal, 20)
+                                                                .background(
+                                                                    RoundedRectangle(cornerRadius: 20)
+                                                                        .stroke(Color.green.opacity(0.5), lineWidth: 1)
+                                                                )
+                                                            }
+                                                            .frame(maxWidth: .infinity)
+                                                            .padding(.top, 16)
+                                                        }
+
+                                                        Color.clear.frame(height: 120)
+                                                    }
+                                                    .padding(.top, geometry.size.height * 0.02)
+                                                }
+                                                .id(refreshTrigger)
+                                                .onChange(of: viewModel.selectedBook) { _, _ in
+                                                    if viewModel.speechSynthesizer.isSpeaking {
+                                                        viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                                                    }
+                                                    withAnimation(.easeOut(duration: 0.3)) {
+                                                        let targetVerse = scrollToVerse ?? 1
+                                                        scrollToVerse = nil
+                                                        proxy.scrollTo(targetVerse, anchor: .top)
+                                                        viewModel.syncBookToStorage()
+                                                    }
+                                                }
+                                                .onChange(of: viewModel.selectedChapter) { _, _ in
+                                                    if viewModel.speechSynthesizer.isSpeaking {
+                                                        viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
+                                                    }
+                                                    withAnimation(.easeOut(duration: 0.3)) {
+                                                        let targetVerse = scrollToVerse ?? 1
+                                                        scrollToVerse = nil
+                                                        proxy.scrollTo(targetVerse, anchor: .top)
+                                                        viewModel.syncChapterToStorage()
+                                                    }
+                                                }
                                             }
-                                            .foregroundColor(.green)
-                                            .padding(.vertical, 12)
-                                            .padding(.horizontal, 20)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 20)
-                                                    .stroke(Color.green.opacity(0.5), lineWidth: 1)
-                                            )
                                         }
-                                        .frame(maxWidth: .infinity)
-                                        .padding(.top, 16)
-                                    }
 
-                                    Color.clear.frame(height: 120)
-                                }
-                                .padding(.top, geometry.size.height * 0.02)
-                            }
-                            .id(refreshTrigger)
-                            .onChange(of: viewModel.selectedBook) { _, _ in
-                                if viewModel.speechSynthesizer.isSpeaking {
-                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
-                                }
-                                withAnimation(.easeOut(duration: 0.3)) {
-                                    let targetVerse = scrollToVerse ?? 1
-                                    scrollToVerse = nil
-                                    proxy.scrollTo(targetVerse, anchor: .top)
-                                    viewModel.syncBookToStorage()
-                                }
-                            }
-                            .onChange(of: viewModel.selectedChapter) { _, _ in
-                                if viewModel.speechSynthesizer.isSpeaking {
-                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
-                                }
-                                withAnimation(.easeOut(duration: 0.3)) {
-                                    let targetVerse = scrollToVerse ?? 1
-                                    scrollToVerse = nil
-                                    proxy.scrollTo(targetVerse, anchor: .top)
-                                    viewModel.syncChapterToStorage()
-                                }
-                            }
-                        }
-                    }
-
-                    // Floating action buttons for iPad
-                    VStack {
+                                        // Floating action buttons for iPad
+                                        VStack {
                         Spacer()
                         iPadFloatingButtons()
                     }
@@ -302,15 +302,15 @@ struct ContentView: View {
                                                 Spacer()
                                                 ProgressView()
                                                     .tint(.gray)
-                                                Text("Carregando a Bíblia...")
-                                                    .font(.system(size: headerFontSize, weight: .regular, design: .serif))
-                                                    .foregroundColor(.gray)
-                                                Spacer()
-                                            }
-                                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                                                                                        Text(String(localized: "content.loading_bible"))
+                                                                                            .font(.system(size: headerFontSize, weight: .regular, design: .serif))
+                                                                                            .foregroundColor(.gray)
+                                                                                        Spacer()
+                                                                                    }
+                                                                                    .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-                                        } else if verses.isEmpty {
-                                            Text("Selecione um livro e um capítulo.")
+                                                                                } else if verses.isEmpty {
+                                                                                    Text(String(localized: "content.select_book_chapter"))
                                                         .font(.system(size: headerFontSize, weight: .regular, design: .serif))
                                                         .foregroundColor(.gray)
                                                         .multilineTextAlignment(.center)
@@ -334,7 +334,7 @@ struct ContentView: View {
                                             HStack(spacing: 8) {
                                                 Image(systemName: "checkmark.circle")
                                                     .font(.system(size: 16))
-                                                Text("Marcar capítulo como lido")
+                                                Text(String(localized: "content.mark_chapter_read"))
                                                     .font(.system(size: 15, weight: .medium, design: .serif))
                                             }
                                             .foregroundColor(.green)
@@ -558,32 +558,32 @@ struct ContentView: View {
                                     Button(role: .destructive) {
                                         viewModel.removeHighlight(for: verse, context: modelContext)
                                     } label: {
-                                        Label("Desmarcar", systemImage: "bookmark.slash")
-                                    }
-                                }
-                            } label: {
-                                Label(verse.highlightColor != nil ? "Cor do marcador" : "Marcar", systemImage: "bookmark")
-                            }
+                                                                    Label(String(localized: "context.remove_highlight"), systemImage: "bookmark.slash")
+                                                                }
+                                                            }
+                                                        } label: {
+                                                            Label(verse.highlightColor != nil ? String(localized: "context.highlight_color") : String(localized: "context.highlight"), systemImage: "bookmark")
+                                                        }
 
-                            Button {
-                                HapticManager.shared.impact(style: .light)
-                                noteEditorMode = .newNote(verse)
-                            } label: {
-                                Label("Adicionar Nota", systemImage: "note.text")
-                            }
+                                                        Button {
+                                                            HapticManager.shared.impact(style: .light)
+                                                            noteEditorMode = .newNote(verse)
+                                                        } label: {
+                                                            Label(String(localized: "context.add_note"), systemImage: "note.text")
+                                                        }
 
-                            Button {
-                                HapticManager.shared.impact(style: .light)
-                                viewModel.copyVerseWithText(verse)
-                            } label: {
-                                Label("Copiar", systemImage: "doc.on.doc")
-                            }
+                                                        Button {
+                                                            HapticManager.shared.impact(style: .light)
+                                                            viewModel.copyVerseWithText(verse)
+                                                        } label: {
+                                                            Label(String(localized: "common.copy"), systemImage: "doc.on.doc")
+                                                        }
 
-                            Button {
-                                HapticManager.shared.impact(style: .light)
-                                viewModel.shareVerse(verse)
-                            } label: {
-                                Label("Compartilhar", systemImage: "square.and.arrow.up")
+                                                        Button {
+                                                            HapticManager.shared.impact(style: .light)
+                                                            viewModel.shareVerse(verse)
+                                                        } label: {
+                                                            Label(String(localized: "common.share"), systemImage: "square.and.arrow.up")
                             }
                         }
                         .onLongPressGesture(minimumDuration: 0.5) {
@@ -608,10 +608,10 @@ struct ContentView: View {
 
     private func highlightColorLabel(_ colorName: String) -> String {
         switch colorName {
-        case "yellow": return "Amarelo"
-        case "green": return "Verde"
-        case "blue": return "Azul"
-        case "pink": return "Rosa"
+        case "yellow": return String(localized: "color.yellow")
+        case "green": return String(localized: "color.green")
+        case "blue": return String(localized: "color.blue")
+        case "pink": return String(localized: "color.pink")
         default: return colorName.capitalized
         }
     }
@@ -645,24 +645,24 @@ struct ContentView: View {
                     showChapterPicker = true
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Cap. \(viewModel.selectedChapter)")
-                            .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
-                            .foregroundColor(.primary)
-                        Image(systemName: "chevron.down")
-                            .font(.system(size: headerFontSize * 0.6))
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, geometry.size.width * 0.03)
-                    .padding(.vertical, geometry.size.height * 0.01)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(Color(.systemGray6))
-                    )
-                }
-                .fixedSize()
+                                        Text("\(String(localized: "common.chapter_abbrev")) \(viewModel.selectedChapter)")
+                                            .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
+                                            .foregroundColor(.primary)
+                                        Image(systemName: "chevron.down")
+                                            .font(.system(size: headerFontSize * 0.6))
+                                            .foregroundColor(.secondary)
+                                    }
+                                    .padding(.horizontal, geometry.size.width * 0.03)
+                                    .padding(.vertical, geometry.size.height * 0.01)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color(.systemGray6))
+                                    )
+                                }
+                                .fixedSize()
 
-                // Spacer between selectors and action buttons
-                Spacer()
+                                // Spacer between selectors and action buttons
+                                Spacer()
 
                 // Speaker button
                 Button {
@@ -934,11 +934,11 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Livro")
+            .navigationTitle(String(localized: "content.book_picker_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fechar") {
+                    Button(String(localized: "content.close")) {
                         showBookPicker = false
                     }
                 }
@@ -984,11 +984,11 @@ struct ContentView: View {
                     }
                 }
             }
-            .navigationTitle("Capítulo")
+            .navigationTitle(String(localized: "content.chapter_picker_title"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Fechar") {
+                    Button(String(localized: "content.close")) {
                         showChapterPicker = false
                     }
                 }
@@ -1013,7 +1013,7 @@ struct ContentView: View {
                     showChapterPicker = true
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Cap. \(viewModel.selectedChapter)")
+                        Text("\(String(localized: "common.chapter_abbrev")) \(viewModel.selectedChapter)")
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
                         Image(systemName: "chevron.down")

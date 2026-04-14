@@ -103,7 +103,7 @@ struct ReadingProgressView: View {
                             .foregroundColor(.white)
                     }
 
-                    Text("Progresso de Leitura")
+                    Text(String(localized: "progress.title"))
                         .font(.system(size: headerFontSize, weight: .bold, design: .serif))
                         .foregroundColor(.primary)
 
@@ -144,7 +144,7 @@ struct ReadingProgressView: View {
     private func overallProgressCard() -> some View {
         VStack(spacing: 12) {
             HStack {
-                Text("Progresso Geral")
+                Text(String(localized: "progress.overall"))
                     .font(.system(size: 18, weight: .semibold, design: .serif))
                     .foregroundColor(.primary)
                 Spacer()
@@ -157,7 +157,7 @@ struct ReadingProgressView: View {
                 .tint(.green)
                 .scaleEffect(y: 2)
 
-            Text("\(Int(progressFraction * 100))% concluído")
+            Text(String(format: String(localized: "progress.completed_percent"), Int(progressFraction * 100)))
                 .font(.system(size: 14, design: .serif))
                 .foregroundColor(.secondary)
         }
@@ -176,11 +176,11 @@ struct ReadingProgressView: View {
                 .foregroundColor(currentStreak > 0 ? .orange : .gray)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("\(currentStreak) \(currentStreak == 1 ? "dia" : "dias") consecutivos")
+                Text(String(format: currentStreak == 1 ? String(localized: "progress.streak_singular") : String(localized: "progress.streak_plural"), currentStreak))
                     .font(.system(size: 18, weight: .semibold, design: .serif))
                     .foregroundColor(.primary)
 
-                Text("Sequência de leitura")
+                Text(String(localized: "progress.streak_label"))
                     .font(.system(size: 14, design: .serif))
                     .foregroundColor(.secondary)
             }
@@ -197,7 +197,7 @@ struct ReadingProgressView: View {
     // MARK: - Per-Book Progress
     private func perBookProgress() -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Por Livro")
+            Text(String(localized: "progress.per_book"))
                 .font(.system(size: 18, weight: .semibold, design: .serif))
                 .foregroundColor(.primary)
 
