@@ -319,17 +319,16 @@ struct SearchView: View {
             let backgroundContext = ModelContext(container)
             backgroundContext.autosaveEnabled = false
 
-            var descriptor = FetchDescriptor<BibleVerse>(
+            let descriptor = FetchDescriptor<BibleVerse>(
                 predicate: #Predicate { verse in
                     verse.text.localizedStandardContains(trimmedQuery) ||
                     verse.bookName.localizedStandardContains(trimmedQuery)
                 }
             )
-            descriptor.fetchLimit = 100
 
             do {
                 let results = try backgroundContext.fetch(descriptor)
-                // Sort in canonical Bible order
+                // Sort in canonical Bible order, then take first 100
                 let sorted = results.sorted { v1, v2 in
                     let order1 = BibleData.bookOrderMap[v1.bookName] ?? 999
                     let order2 = BibleData.bookOrderMap[v2.bookName] ?? 999
@@ -337,7 +336,7 @@ struct SearchView: View {
                     if v1.chapterNumber != v2.chapterNumber { return v1.chapterNumber < v2.chapterNumber }
                     return v1.verseNumber < v2.verseNumber
                 }
-                return sorted.map { $0.persistentModelID }
+                return sorted.prefix(100).map { $0.persistentModelID }
             } catch {
                 print("Erro ao buscar: \(error.localizedDescription)")
                 return []
