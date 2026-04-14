@@ -14,6 +14,13 @@ extension View {
     }
 }
 
+struct ScrollOffsetPreferenceKey: PreferenceKey {
+    static var defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 struct ContentView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
     @AppStorage("fontSize") private var fontSize: Double = 17.0
@@ -38,6 +45,9 @@ struct ContentView: View {
     @State private var noteEditorMode: NoteEditorMode?
     @State private var scrollToVerse: Int?
     @State private var refreshTrigger = UUID()
+    @State private var isHeaderVisible: Bool = true
+    @State private var lastScrollOffset: CGFloat = 0
+    @State private var ignoreScrollOffsets: Bool = false
 
     @EnvironmentObject private var importStatus: ImportStatus
 
@@ -291,7 +301,10 @@ struct ContentView: View {
                         .ignoresSafeArea()
 
                     VStack(spacing: 0) {
-                        headerView(geometry: geometry)
+                        if isHeaderVisible {
+                            headerView(geometry: geometry)
+                                .transition(.move(edge: .top).combined(with: .opacity))
+                        }
 
                         ScrollViewReader { proxy in
                                 ScrollView {
@@ -353,6 +366,18 @@ struct ContentView: View {
                                 }
                                 .padding(.top, geometry.size.height * 0.02)
                                 .transition(currentTransition)
+                                .background(
+                                    GeometryReader { geo in
+                                        Color.clear.preference(
+                                            key: ScrollOffsetPreferenceKey.self,
+                                            value: geo.frame(in: .named("scroll")).minY
+                                        )
+                                    }
+                                )
+                            }
+                            .coordinateSpace(name: "scroll")
+                            .onPreferenceChange(ScrollOffsetPreferenceKey.self) { offset in
+                                handleScrollOffset(offset)
                             }
                             .id(refreshTrigger)
                             .contentShape(Rectangle())
@@ -411,6 +436,13 @@ struct ContentView: View {
                                                     proxy.scrollTo(targetVerse, anchor: .top)
                                                     viewModel.syncBookToStorage()
                                                 }
+                                                ignoreScrollOffsets = true
+                                                withAnimation(.easeOut(duration: 0.25)) {
+                                                    isHeaderVisible = true
+                                                }
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                                    ignoreScrollOffsets = false
+                                                }
                                             }
                             .onChange(of: viewModel.selectedChapter) { _, _ in
                                 if viewModel.speechSynthesizer.isSpeaking {
@@ -422,14 +454,24 @@ struct ContentView: View {
                                     proxy.scrollTo(targetVerse, anchor: .top)
                                     viewModel.syncChapterToStorage()
                                 }
+                                ignoreScrollOffsets = true
+                                withAnimation(.easeOut(duration: 0.25)) {
+                                    isHeaderVisible = true
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                    ignoreScrollOffsets = false
+                                }
                             }
                         }
                     }
 
                     // Footer bar at the bottom
-                    VStack {
-                        Spacer()
-                        footerBar(geometry: geometry)
+                    if isHeaderVisible {
+                        VStack {
+                            Spacer()
+                            footerBar(geometry: geometry)
+                        }
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
                 }
                 .preferredColorScheme(.dark)
@@ -877,6 +919,31 @@ struct ContentView: View {
         .padding(.horizontal, 24)
     }
     
+    private func handleScrollOffset(_ offset: CGFloat) {
+        guard !ignoreScrollOffsets else {
+            lastScrollOffset = offset
+            return
+        }
+
+        let delta = offset - lastScrollOffset
+
+        if delta < -10 {
+            lastScrollOffset = offset
+            if isHeaderVisible {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isHeaderVisible = false
+                }
+            }
+        } else if delta > 10 {
+            lastScrollOffset = offset
+            if !isHeaderVisible {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isHeaderVisible = true
+                }
+            }
+        }
+    }
+
     private func openNoteForVerse(_ verse: BibleVerse) {
         if let existingNote = viewModel.findNoteForVerse(verse, context: modelContext) {
             noteEditorMode = .editNote(existingNote)
