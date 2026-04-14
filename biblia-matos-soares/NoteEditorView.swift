@@ -138,6 +138,7 @@ struct NoteEditorView: View {
                 verseNumber: verse.verseNumber,
                 noteText: trimmedText
             )
+            newNote.verse = verse
             modelContext.insert(newNote)
         }
 

@@ -15,12 +15,11 @@ extension View {
 }
 
 struct ContentView: View {
-    @AppStorage("lastSelectedBook") private var storedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
-    @AppStorage("lastSelectedChapter") private var storedChapter: Int = 1
-    @AppStorage("readingHistory") private var readingHistoryData: Data = Data()
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding: Bool = false
-    @AppStorage("fontSize") private var fontSize: Double = 17.0 // Default system font size
-    @AppStorage("hapticFeedbackEnabled") private var hapticFeedbackEnabled: Bool = true // Default ON
+    @AppStorage("fontSize") private var fontSize: Double = 17.0
+    @AppStorage("hapticFeedbackEnabled") private var hapticFeedbackEnabled: Bool = true
+
+    @State private var viewModel = ContentViewModel()
 
     @State private var showOnboarding: Bool = false
     @State private var showFontSizeSlider: Bool = false
@@ -28,13 +27,10 @@ struct ContentView: View {
     @State private var showReadingHistory: Bool = false
     @State private var showDailyVerse: Bool = false
 
-    @State private var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
-    @State private var selectedChapter: Int = 1
     @State private var dragOffset: CGSize = .zero
     @State private var isDragging: Bool = false
     @State private var currentTranslationDirection: HorizontalTransitionDirection = .none
-    
-    @State private var speechSynthesizer = AVSpeechSynthesizer()
+
     @State private var noteEditorMode: NoteEditorMode?
     @State private var scrollToVerse: Int?
     @State private var refreshTrigger = UUID()
@@ -74,17 +70,7 @@ struct ContentView: View {
     }
 
     private var verses: [BibleVerse] {
-        do {
-            let descriptor = FetchDescriptor<BibleVerse>(
-                predicate: #Predicate { verse in
-                    verse.bookName == selectedBook && verse.chapterNumber == selectedChapter
-                },
-                sortBy: [SortDescriptor(\.verseNumber, order: .forward)]
-            )
-            return try modelContext.fetch(descriptor)
-        } catch {
-            return []
-        }
+        viewModel.fetchVerses(context: modelContext)
     }
 
     enum HorizontalTransitionDirection {
@@ -151,19 +137,19 @@ struct ContentView: View {
                                         let verticalTranslation = gesture.translation.height
 
                                         if abs(horizontalTranslation) > abs(verticalTranslation) {
-                                            if speechSynthesizer.isSpeaking {
-                                                speechSynthesizer.stopSpeaking(at: .immediate)
+                                            if viewModel.speechSynthesizer.isSpeaking {
+                                                viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                             }
 
                                             if horizontalTranslation > 50 {
                                                 withAnimation(.easeOut(duration: 0.3)) {
                                                     currentTranslationDirection = .right
-                                                    goToPreviousChapter()
+                                                    viewModel.goToPreviousChapter()
                                                 }
                                             } else if horizontalTranslation < -50 {
                                                 withAnimation(.easeOut(duration: 0.3)) {
                                                     currentTranslationDirection = .left
-                                                    goToNextChapter()
+                                                    viewModel.goToNextChapter()
                                                 }
                                             }
                                         }
@@ -174,30 +160,27 @@ struct ContentView: View {
                                         }
                                     }
                             )
-                            .onChange(of: selectedBook) { _, newBook in
-                                if speechSynthesizer.isSpeaking {
-                                    speechSynthesizer.stopSpeaking(at: .immediate)
+                            .onChange(of: viewModel.selectedBook) { _, _ in
+                                if viewModel.speechSynthesizer.isSpeaking {
+                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                 }
                                 withAnimation(.easeOut(duration: 0.3)) {
-                                    selectedChapter = 1
+                                    viewModel.selectedChapter = 1
                                     let targetVerse = scrollToVerse ?? 1
                                     scrollToVerse = nil
                                     proxy.scrollTo(targetVerse, anchor: .top)
-                                    storedBook = newBook
-                                    storedChapter = selectedChapter
-                                    updateReadingHistory()
+                                    viewModel.syncBookToStorage()
                                 }
                             }
-                            .onChange(of: selectedChapter) { _, newChapter in
-                                if speechSynthesizer.isSpeaking {
-                                    speechSynthesizer.stopSpeaking(at: .immediate)
+                            .onChange(of: viewModel.selectedChapter) { _, _ in
+                                if viewModel.speechSynthesizer.isSpeaking {
+                                    viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                                 }
                                 withAnimation(.easeOut(duration: 0.3)) {
                                     let targetVerse = scrollToVerse ?? 1
                                     scrollToVerse = nil
                                     proxy.scrollTo(targetVerse, anchor: .top)
-                                    storedChapter = newChapter
-                                    updateReadingHistory()
+                                    viewModel.syncChapterToStorage()
                                 }
                             }
                         }
@@ -212,9 +195,7 @@ struct ContentView: View {
                 }
                 .preferredColorScheme(.dark)
                 .onAppear {
-                    selectedBook = storedBook
-                    selectedChapter = storedChapter
-                    updateReadingHistory()
+                    viewModel.restoreFromStorage()
 
                     // Show onboarding on first launch
                     if !hasSeenOnboarding {
@@ -248,15 +229,15 @@ struct ContentView: View {
                 }
                 .navigationDestination(isPresented: $showReadingHistory) {
                     ReadingHistoryView { bookName, chapterNumber, verseNumber in
-                        selectedBook = bookName
-                        selectedChapter = chapterNumber
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
                         scrollToVerse = verseNumber
                     }
                 }
                 .navigationDestination(isPresented: $showDailyVerse) {
                     DailyVerseView { bookName, chapterNumber, verseNumber in
-                        selectedBook = bookName
-                        selectedChapter = chapterNumber
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
                         scrollToVerse = verseNumber
                     }
                 }
@@ -264,26 +245,9 @@ struct ContentView: View {
         }
     }
 
-    private var verseNumbersWithNotes: Set<Int> {
-        let book = selectedBook
-        let chapter = selectedChapter
-        do {
-            let descriptor = FetchDescriptor<VerseNote>(
-                predicate: #Predicate { note in
-                    note.bookName == book && note.chapterNumber == chapter
-                }
-            )
-            let notes = try modelContext.fetch(descriptor)
-            return Set(notes.map { $0.verseNumber })
-        } catch {
-            return []
-        }
-    }
-
-    // Nova função para renderizar versículos com destaque contínuo
     private func versesWithContinuousHighlight(geometry: GeometryProxy) -> some View {
-        let groupedVerses = groupConsecutiveHighlightedVerses(verses)
-        let notedVerses = verseNumbersWithNotes
+        let groupedVerses = viewModel.groupConsecutiveHighlightedVerses(verses)
+        let notedVerses = viewModel.fetchVerseNumbersWithNotes(context: modelContext)
 
         return VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
             ForEach(groupedVerses, id: \.id) { group in
@@ -307,7 +271,7 @@ struct ContentView: View {
                             }
                             .frame(width: geometry.size.width * 0.08, alignment: .leading)
                             .onLongPressGesture(minimumDuration: 0.3) {
-                                copyVerseReference(verse)
+                                viewModel.copyVerseReference(verse)
                             }
 
                             Text(verse.text)
@@ -322,7 +286,7 @@ struct ContentView: View {
                         .id(verse.verseNumber)
                         .contextMenu {
                             Button {
-                                toggleHighlight(for: verse)
+                                viewModel.toggleHighlight(for: verse, context: modelContext)
                             } label: {
                                 Label(verse.isHighlighted ? "Desmarcar" : "Marcar", systemImage: verse.isHighlighted ? "bookmark.slash" : "bookmark")
                             }
@@ -336,20 +300,20 @@ struct ContentView: View {
 
                             Button {
                                 HapticManager.shared.impact(style: .light)
-                                copyVerseWithText(verse)
+                                viewModel.copyVerseWithText(verse)
                             } label: {
                                 Label("Copiar", systemImage: "doc.on.doc")
                             }
 
                             Button {
                                 HapticManager.shared.impact(style: .light)
-                                shareVerse(verse)
+                                viewModel.shareVerse(verse)
                             } label: {
                                 Label("Compartilhar", systemImage: "square.and.arrow.up")
                             }
                         }
                         .onLongPressGesture(minimumDuration: 0.5) {
-                            toggleHighlight(for: verse)
+                            viewModel.toggleHighlight(for: verse, context: modelContext)
                         }
                     }
                 }
@@ -364,74 +328,6 @@ struct ContentView: View {
         }
     }
 
-    // Estrutura para agrupar versículos
-    private struct VerseGroup {
-        let id = UUID()
-        let verses: [BibleVerse]
-        let isHighlighted: Bool
-    }
-
-    // Função para agrupar versículos consecutivos destacados
-    private func groupConsecutiveHighlightedVerses(_ verses: [BibleVerse]) -> [VerseGroup] {
-        var groups: [VerseGroup] = []
-        var currentGroup: [BibleVerse] = []
-        var currentHighlightState: Bool = false
-        
-        for verse in verses {
-            if currentGroup.isEmpty {
-                // Primeiro versículo
-                currentGroup.append(verse)
-                currentHighlightState = verse.isHighlighted
-            } else if verse.isHighlighted == currentHighlightState {
-                // Mesmo estado de destaque, adicionar ao grupo atual
-                currentGroup.append(verse)
-            } else {
-                // Estado de destaque mudou, criar novo grupo
-                groups.append(VerseGroup(verses: currentGroup, isHighlighted: currentHighlightState))
-                currentGroup = [verse]
-                currentHighlightState = verse.isHighlighted
-            }
-        }
-        
-        // Adicionar o último grupo
-        if !currentGroup.isEmpty {
-            groups.append(VerseGroup(verses: currentGroup, isHighlighted: currentHighlightState))
-        }
-        
-        return groups
-    }
-
-    private func goToPreviousChapter() {
-        let currentBookIndex = BibleData.orderedBookNames.firstIndex(of: selectedBook) ?? 0
-
-        if selectedChapter > 1 {
-            selectedChapter -= 1
-        } else if currentBookIndex > 0 {
-            let previousBookName = BibleData.orderedBookNames[currentBookIndex - 1]
-            selectedBook = previousBookName
-            selectedChapter = BibleData.numberOfChapters(forBook: previousBookName) ?? 1
-        } else {
-            selectedBook = BibleData.orderedBookNames.last ?? "Apocalipse"
-            selectedChapter = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
-        }
-    }
-
-    private func goToNextChapter() {
-        let currentBookIndex = BibleData.orderedBookNames.firstIndex(of: selectedBook) ?? 0
-        let numberOfChaptersInCurrentBook = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
-
-        if selectedChapter < numberOfChaptersInCurrentBook {
-            selectedChapter += 1
-        } else if currentBookIndex < BibleData.orderedBookNames.count - 1 {
-            let nextBookName = BibleData.orderedBookNames[currentBookIndex + 1]
-            selectedBook = nextBookName
-            selectedChapter = 1
-        } else {
-            selectedBook = BibleData.orderedBookNames.first ?? "Gênesis"
-            selectedChapter = 1
-        }
-    }
-
     private func headerView(geometry: GeometryProxy) -> some View {
         VStack(spacing: 0) {
             HStack(spacing: geometry.size.width * 0.02) {
@@ -439,12 +335,12 @@ struct ContentView: View {
                 Menu {
                     ForEach(BibleData.orderedBookNames, id: \.self) { book in
                         Button(book) {
-                            selectedBook = book
+                            viewModel.selectedBook = book
                         }
                     }
                 } label: {
                     HStack {
-                        Text(selectedBook)
+                        Text(viewModel.selectedBook)
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
                             .lineLimit(1)
@@ -462,14 +358,14 @@ struct ContentView: View {
 
                 // Chapter selector
                 Menu {
-                    ForEach(1..<(BibleData.numberOfChapters(forBook: selectedBook) ?? 1) + 1, id: \.self) { chapter in
+                    ForEach(1..<(BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1) + 1, id: \.self) { chapter in
                         Button("Capítulo \(chapter)") {
-                            selectedChapter = chapter
+                            viewModel.selectedChapter = chapter
                         }
                     }
                 } label: {
                     HStack(spacing: 4) {
-                        Text("Cap. \(selectedChapter)")
+                        Text("Cap. \(viewModel.selectedChapter)")
                             .font(.system(size: headerFontSize, weight: .semibold, design: .serif))
                             .foregroundColor(.primary)
                         Image(systemName: "chevron.down")
@@ -491,13 +387,13 @@ struct ContentView: View {
                 // Speaker button
                 Button {
                     HapticManager.shared.impact(style: .medium)
-                    if speechSynthesizer.isSpeaking {
-                        speechSynthesizer.stopSpeaking(at: .immediate)
+                    if viewModel.speechSynthesizer.isSpeaking {
+                        viewModel.speechSynthesizer.stopSpeaking(at: .immediate)
                     } else {
-                        readCurrentChapter()
+                        viewModel.readCurrentChapter(verses: verses)
                     }
                 } label: {
-                    Image(systemName: speechSynthesizer.isSpeaking ? "stop.fill" : "speaker.wave.2.fill")
+                    Image(systemName: viewModel.speechSynthesizer.isSpeaking ? "stop.fill" : "speaker.wave.2.fill")
                         .font(.system(size: headerFontSize * 0.7))
                         .foregroundColor(.white)
                         .frame(width: 36, height: 36)
@@ -510,8 +406,8 @@ struct ContentView: View {
                 // Search button
                 NavigationLink {
                     SearchView { bookName, chapterNumber, verseNumber in
-                        selectedBook = bookName
-                        selectedChapter = chapterNumber
+                        viewModel.selectedBook = bookName
+                        viewModel.selectedChapter = chapterNumber
                         scrollToVerse = verseNumber
                     }
                 } label: {
@@ -597,8 +493,8 @@ struct ContentView: View {
                         // Notes button
                         NavigationLink {
                                 NotesView { bookName, chapterNumber, verseNumber in
-                                    selectedBook = bookName
-                                    selectedChapter = chapterNumber
+                                    viewModel.selectedBook = bookName
+                                    viewModel.selectedChapter = chapterNumber
                                     scrollToVerse = verseNumber
                                 }
                         } label: {
@@ -614,8 +510,8 @@ struct ContentView: View {
                         // Bookmarks button
                         NavigationLink {
                                 HighlightedVersesView { bookName, chapterNumber, verseNumber in
-                                    selectedBook = bookName
-                                    selectedChapter = chapterNumber
+                                    viewModel.selectedBook = bookName
+                                    viewModel.selectedChapter = chapterNumber
                                     scrollToVerse = verseNumber
                                 }
                         } label: {
@@ -702,83 +598,9 @@ struct ContentView: View {
         .padding(.horizontal, 24)
     }
     
-    private func readCurrentChapter() {
-        let fullChapterText = verses.map { $0.text }.joined(separator: " ")
-        let utterance = AVSpeechUtterance(string: fullChapterText)
-        utterance.voice = AVSpeechSynthesisVoice(language: "pt-BR")
-        speechSynthesizer.speak(utterance)
-    }
-    
     private func openNoteForVerse(_ verse: BibleVerse) {
-        let book = verse.bookName
-        let chapter = verse.chapterNumber
-        let verseNum = verse.verseNumber
-        do {
-            let descriptor = FetchDescriptor<VerseNote>(
-                predicate: #Predicate { note in
-                    note.bookName == book && note.chapterNumber == chapter && note.verseNumber == verseNum
-                }
-            )
-            if let existingNote = try modelContext.fetch(descriptor).first {
-                noteEditorMode = .editNote(existingNote)
-            }
-        } catch {
-            print("Erro ao buscar nota: \(error.localizedDescription)")
-        }
-    }
-
-    private func toggleHighlight(for verse: BibleVerse) {
-        verse.isHighlighted.toggle()
-        HapticManager.shared.impact(style: .medium)
-
-        do {
-            try modelContext.save()
-        } catch {
-            print("Failed to save highlight change: \(error.localizedDescription)")
-        }
-    }
-    
-    private func copyVerseReference(_ verse: BibleVerse) {
-        let reference = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber)"
-        UIPasteboard.general.string = reference
-        HapticManager.shared.notification(type: .success)
-    }
-
-    private func copyVerseWithText(_ verse: BibleVerse) {
-        let fullText = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber) - \(verse.text)"
-        UIPasteboard.general.string = fullText
-        HapticManager.shared.notification(type: .success)
-    }
-    
-    private func shareVerse(_ verse: BibleVerse) {
-        let shareText = "\(verse.bookName) \(verse.chapterNumber):\(verse.verseNumber) - \(verse.text)"
-        let activityVC = UIActivityViewController(activityItems: [shareText], applicationActivities: nil)
-        
-        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let rootViewController = windowScene.windows.first?.rootViewController {
-            rootViewController.present(activityVC, animated: true)
-        }
-    }
-    
-    private func updateReadingHistory() {
-        let historyItem = "\(selectedBook)|\(selectedChapter)"
-        var history: [String] = []
-        
-        if let decoded = try? JSONDecoder().decode([String].self, from: readingHistoryData) {
-            history = decoded
-        }
-        
-        // Remove if already exists
-        history.removeAll { $0 == historyItem }
-        // Add to front
-        history.insert(historyItem, at: 0)
-        // Keep only last 10
-        if history.count > 10 {
-            history = Array(history.prefix(10))
-        }
-        
-        if let encoded = try? JSONEncoder().encode(history) {
-            readingHistoryData = encoded
+        if let existingNote = viewModel.findNoteForVerse(verse, context: modelContext) {
+            noteEditorMode = .editNote(existingNote)
         }
     }
 

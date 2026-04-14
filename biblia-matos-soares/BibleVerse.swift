@@ -11,6 +11,9 @@ final class BibleVerse {
     var text: String
     var isHighlighted: Bool = false
 
+    @Relationship(deleteRule: .cascade, inverse: \VerseNote.verse)
+    var notes: [VerseNote] = []
+
     init(bookName: String, chapterNumber: Int, verseNumber: Int, text: String) {
         self.bookName = bookName
         self.chapterNumber = chapterNumber

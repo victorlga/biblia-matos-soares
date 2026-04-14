@@ -58,7 +58,7 @@ struct biblia_matos_soaresApp: App {
     // Import status to signal when Bible data is ready
     @StateObject private var importStatus = ImportStatus()
 
-    // SwiftData container
+    // SwiftData container with migration support
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             BibleVerse.self,
@@ -66,7 +66,11 @@ struct biblia_matos_soaresApp: App {
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: BibleMigrationPlan.self,
+                configurations: [modelConfiguration]
+            )
         } catch {
             fatalError("❌ Error creating database: \(error)")
         }
