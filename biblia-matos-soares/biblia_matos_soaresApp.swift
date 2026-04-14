@@ -58,7 +58,7 @@ struct biblia_matos_soaresApp: App {
     // Import status to signal when Bible data is ready
     @StateObject private var importStatus = ImportStatus()
 
-    // SwiftData container with migration support
+    // SwiftData container with migration support and resilient fallback
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             BibleVerse.self,
@@ -66,6 +66,8 @@ struct biblia_matos_soaresApp: App {
             ReadingProgress.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+
+        // Try creating with staged migration plan first
         do {
             return try ModelContainer(
                 for: schema,
@@ -73,7 +75,43 @@ struct biblia_matos_soaresApp: App {
                 configurations: [modelConfiguration]
             )
         } catch {
-            fatalError("❌ Error creating database: \(error)")
+            print("⚠️ Staged migration failed: \(error)")
+            print("⚠️ Attempting fallback: lightweight migration without migration plan...")
+        }
+
+        // Fallback 1: Try without migration plan (lightweight migration)
+        do {
+            return try ModelContainer(
+                for: schema,
+                configurations: [modelConfiguration]
+            )
+        } catch {
+            print("⚠️ Lightweight migration also failed: \(error)")
+            print("⚠️ Deleting existing store and recreating...")
+        }
+
+        // Fallback 2: Delete the store and recreate from scratch.
+        // Bible data will be re-imported from the bundled JSON on next launch.
+        // User notes and highlights will be lost.
+        let storeURL = modelConfiguration.url
+        let storePaths = [
+            storeURL,
+            URL(fileURLWithPath: storeURL.path + "-wal"),
+            URL(fileURLWithPath: storeURL.path + "-shm"),
+        ]
+        for path in storePaths {
+            try? FileManager.default.removeItem(at: path)
+        }
+        print("🗑️ Deleted existing store files at \(storeURL.path)")
+
+        do {
+            return try ModelContainer(
+                for: schema,
+                migrationPlan: BibleMigrationPlan.self,
+                configurations: [modelConfiguration]
+            )
+        } catch {
+            fatalError("❌ Error creating database after store reset: \(error)")
         }
     }()
     
