@@ -41,6 +41,11 @@
 "search.placeholder" = "Search verses...";
 "search.empty_prompt" = "Type to search verses";
 "search.no_results" = "No results found";
+"search.first_100_results" = "First 100 results";
+"search.result_singular" = "result";
+"search.result_plural" = "results";
+"search.recent_title" = "Recent";
+"search.clear" = "Clear";
 
 /* Notes View */
 "notes.title" = "Notes";
