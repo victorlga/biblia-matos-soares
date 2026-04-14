@@ -146,11 +146,11 @@
 				};
 			};
 			buildConfigurationList = 5776D2202DF9022600CFDACC /* Build configuration list for PBXProject "biblia-matos-soares" */;
-			developmentRegion = en;
+			developmentRegion = "pt-BR";
 			hasScannedForEncodings = 0;
 			knownRegions = (
-				en,
 				"pt-BR",
+				en,
 				Base,
 			);
 			mainGroup = 5776D21C2DF9022600CFDACC;
