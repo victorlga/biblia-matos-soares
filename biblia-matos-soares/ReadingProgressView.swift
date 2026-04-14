@@ -202,7 +202,7 @@ struct ReadingProgressView: View {
                 .foregroundColor(.primary)
 
             ForEach(BibleData.orderedBookNames, id: \.self) { bookName in
-                let totalBookChapters = BibleData.bookChapterCounts[bookName] ?? 0
+                let totalBookChapters = BibleData.bookChapterCounts[bookName] ?? 1
                 let readSet = readChaptersForBook(bookName)
                 let readCount = readSet.count
 
