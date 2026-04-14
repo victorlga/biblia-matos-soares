@@ -662,17 +662,21 @@ struct ContentView: View {
 
         let delta = offset - lastScrollOffset
 
-        if delta < -10 && isHeaderVisible {
-            withAnimation(.easeOut(duration: 0.25)) {
-                isHeaderVisible = false
+        if delta < -10 {
+            lastScrollOffset = offset
+            if isHeaderVisible {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isHeaderVisible = false
+                }
             }
-        } else if delta > 10 && !isHeaderVisible {
-            withAnimation(.easeOut(duration: 0.25)) {
-                isHeaderVisible = true
+        } else if delta > 10 {
+            lastScrollOffset = offset
+            if !isHeaderVisible {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    isHeaderVisible = true
+                }
             }
         }
-
-        lastScrollOffset = offset
     }
 
     private func openNoteForVerse(_ verse: BibleVerse) {
