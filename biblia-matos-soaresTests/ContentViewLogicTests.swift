@@ -56,17 +56,17 @@ struct ContentViewLogicTests {
         let container = try ModelContainer(for: schema, configurations: [config])
         let context = container.mainContext
 
-        // Create test verses with alternating highlights
+        // Create test verses with alternating highlight colors
         let v1 = BibleVerse(bookName: "Test", chapterNumber: 1, verseNumber: 1, text: "A")
-        v1.isHighlighted = false
+        // v1 has no highlight (default)
         let v2 = BibleVerse(bookName: "Test", chapterNumber: 1, verseNumber: 2, text: "B")
-        v2.isHighlighted = false
+        // v2 has no highlight (default)
         let v3 = BibleVerse(bookName: "Test", chapterNumber: 1, verseNumber: 3, text: "C")
-        v3.isHighlighted = true
+        v3.highlightColor = "yellow"
         let v4 = BibleVerse(bookName: "Test", chapterNumber: 1, verseNumber: 4, text: "D")
-        v4.isHighlighted = true
+        v4.highlightColor = "yellow"
         let v5 = BibleVerse(bookName: "Test", chapterNumber: 1, verseNumber: 5, text: "E")
-        v5.isHighlighted = false
+        // v5 has no highlight (default)
 
         for v in [v1, v2, v3, v4, v5] { context.insert(v) }
 
@@ -74,11 +74,11 @@ struct ContentViewLogicTests {
         let groups = vm.groupConsecutiveHighlightedVerses([v1, v2, v3, v4, v5])
 
         #expect(groups.count == 3)
-        #expect(groups[0].isHighlighted == false)
+        #expect(groups[0].highlightColor == nil)
         #expect(groups[0].verses.count == 2)
-        #expect(groups[1].isHighlighted == true)
+        #expect(groups[1].highlightColor == "yellow")
         #expect(groups[1].verses.count == 2)
-        #expect(groups[2].isHighlighted == false)
+        #expect(groups[2].highlightColor == nil)
         #expect(groups[2].verses.count == 1)
     }
 

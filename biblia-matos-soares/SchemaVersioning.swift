@@ -50,6 +50,34 @@ enum SchemaV2: VersionedSchema {
     static var versionIdentifier = Schema.Version(2, 0, 0)
 
     static var models: [any PersistentModel.Type] {
+        [BibleVerseV2.self, VerseNote.self]
+    }
+
+    @Model
+    final class BibleVerseV2 {
+        var bookName: String
+        var chapterNumber: Int
+        var verseNumber: Int
+        var text: String
+        var isHighlighted: Bool = false
+
+        @Relationship(deleteRule: .cascade, inverse: \VerseNote.verse)
+        var notes: [VerseNote] = []
+
+        init(bookName: String, chapterNumber: Int, verseNumber: Int, text: String) {
+            self.bookName = bookName
+            self.chapterNumber = chapterNumber
+            self.verseNumber = verseNumber
+            self.text = text
+        }
+    }
+}
+
+// MARK: - Schema V3 (replaces isHighlighted: Bool with highlightColor: String?)
+enum SchemaV3: VersionedSchema {
+    static var versionIdentifier = Schema.Version(3, 0, 0)
+
+    static var models: [any PersistentModel.Type] {
         [BibleVerse.self, VerseNote.self]
     }
 }
@@ -57,11 +85,11 @@ enum SchemaV2: VersionedSchema {
 // MARK: - Migration Plan
 enum BibleMigrationPlan: SchemaMigrationPlan {
     static var schemas: [any VersionedSchema.Type] {
-        [SchemaV1.self, SchemaV2.self]
+        [SchemaV1.self, SchemaV2.self, SchemaV3.self]
     }
 
     static var stages: [MigrationStage] {
-        [migrateV1toV2]
+        [migrateV1toV2, migrateV2toV3]
     }
 
     static let migrateV1toV2 = MigrationStage.custom(
@@ -91,6 +119,23 @@ enum BibleMigrationPlan: SchemaMigrationPlan {
             }
         }
 
+        try context.save()
+    }
+
+    static let migrateV2toV3 = MigrationStage.custom(
+        fromVersion: SchemaV2.self,
+        toVersion: SchemaV3.self
+    ) { context in
+        // willMigrate: runs before the schema change. Nothing needed here.
+    } didMigrate: { context in
+        // After migration: the new schema has both isHighlighted (legacy)
+        // and highlightColor. Convert isHighlighted == true → "yellow",
+        // then clear the legacy flag.
+        let allVerses = try context.fetch(FetchDescriptor<BibleVerse>())
+        for verse in allVerses where verse.isHighlighted && verse.highlightColor == nil {
+            verse.highlightColor = "yellow"
+            verse.isHighlighted = false
+        }
         try context.save()
     }
 }

@@ -270,7 +270,8 @@ struct ContentView: View {
 
         return VStack(alignment: .leading, spacing: geometry.size.height * 0.02) {
             ForEach(groupedVerses, id: \.id) { group in
-                VStack(alignment: .leading, spacing: group.isHighlighted ? 0 : geometry.size.height * 0.02) {
+                let hasHighlight = group.highlightColor != nil
+                VStack(alignment: .leading, spacing: hasHighlight ? 0 : geometry.size.height * 0.02) {
                     ForEach(group.verses) { verse in
                         HStack(alignment: .top, spacing: geometry.size.width * 0.015) {
                             HStack(alignment: .top, spacing: 2) {
@@ -301,13 +302,29 @@ struct ContentView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
                         .padding(.horizontal, geometry.size.width * 0.05)
-                        .padding(.vertical, group.isHighlighted ? 4 : 0)
+                        .padding(.vertical, hasHighlight ? 4 : 0)
                         .id(verse.verseNumber)
                         .contextMenu {
-                            Button {
-                                viewModel.toggleHighlight(for: verse, context: modelContext)
+                            // Highlight color picker
+                            Menu {
+                                ForEach(BibleVerse.availableColors, id: \.name) { option in
+                                    Button {
+                                        viewModel.setHighlightColor(option.name, for: verse, context: modelContext)
+                                    } label: {
+                                        Label(highlightColorLabel(option.name), systemImage: verse.highlightColor == option.name ? "checkmark.circle.fill" : "circle.fill")
+                                    }
+                                }
+
+                                if verse.highlightColor != nil {
+                                    Divider()
+                                    Button(role: .destructive) {
+                                        viewModel.removeHighlight(for: verse, context: modelContext)
+                                    } label: {
+                                        Label("Desmarcar", systemImage: "bookmark.slash")
+                                    }
+                                }
                             } label: {
-                                Label(verse.isHighlighted ? "Desmarcar" : "Marcar", systemImage: verse.isHighlighted ? "bookmark.slash" : "bookmark")
+                                Label(verse.highlightColor != nil ? "Cor do marcador" : "Marcar", systemImage: "bookmark")
                             }
 
                             Button {
@@ -332,18 +349,32 @@ struct ContentView: View {
                             }
                         }
                         .onLongPressGesture(minimumDuration: 0.5) {
-                            viewModel.toggleHighlight(for: verse, context: modelContext)
+                            // Quick-highlight with yellow on long press
+                            if verse.highlightColor != nil {
+                                viewModel.removeHighlight(for: verse, context: modelContext)
+                            } else {
+                                viewModel.setHighlightColor("yellow", for: verse, context: modelContext)
+                            }
                         }
                     }
                 }
                 .background(
-                    // Fundo que se estende por toda a largura
                     Rectangle()
-                        .fill(group.isHighlighted ? Color.yellow.opacity(0.3) : Color.clear)
+                        .fill(group.verses.first?.highlightSwiftUIColor ?? Color.clear)
                         .frame(maxWidth: .infinity)
                 )
-                .cornerRadius(group.isHighlighted ? 8 : 0)
+                .cornerRadius(hasHighlight ? 8 : 0)
             }
+        }
+    }
+
+    private func highlightColorLabel(_ colorName: String) -> String {
+        switch colorName {
+        case "yellow": return "Amarelo"
+        case "green": return "Verde"
+        case "blue": return "Azul"
+        case "pink": return "Rosa"
+        default: return colorName.capitalized
         }
     }
 

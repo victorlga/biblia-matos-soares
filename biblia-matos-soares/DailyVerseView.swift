@@ -103,12 +103,12 @@ struct DailyVerseView: View {
                                 toggleHighlight(for: verse)
                             } label: {
                                 VStack(spacing: 6) {
-                                    Image(systemName: verse.isHighlighted ? "bookmark.fill" : "bookmark")
+                                    Image(systemName: verse.highlightColor != nil ? "bookmark.fill" : "bookmark")
                                         .font(.system(size: 22))
-                                    Text(verse.isHighlighted ? "Marcado" : "Marcar")
+                                    Text(verse.highlightColor != nil ? "Marcado" : "Marcar")
                                         .font(.system(size: 13, design: .serif))
                                 }
-                                .foregroundColor(verse.isHighlighted ? .yellow : .white)
+                                .foregroundColor(verse.highlightColor != nil ? .yellow : .white)
                             }
 
                             // Navigate button
@@ -185,7 +185,12 @@ struct DailyVerseView: View {
     }
 
     private func toggleHighlight(for verse: BibleVerse) {
-        verse.isHighlighted.toggle()
+        if verse.highlightColor != nil {
+            verse.highlightColor = nil
+        } else {
+            verse.highlightColor = "yellow"
+        }
+        verse.isHighlighted = false // legacy field
         do {
             try modelContext.save()
         } catch {

@@ -27,7 +27,7 @@ class ContentViewModel {
     struct VerseGroup: Identifiable {
         let id = UUID()
         let verses: [BibleVerse]
-        let isHighlighted: Bool
+        let highlightColor: String?
     }
 
     // MARK: - Initialization
@@ -140,8 +140,9 @@ class ContentViewModel {
     }
 
     // MARK: - Highlight
-    func toggleHighlight(for verse: BibleVerse, context: ModelContext) {
-        verse.isHighlighted.toggle()
+    func setHighlightColor(_ color: String?, for verse: BibleVerse, context: ModelContext) {
+        verse.highlightColor = color
+        verse.isHighlighted = false // legacy field, always false in V3
         HapticManager.shared.impact(style: .medium)
 
         do {
@@ -149,6 +150,10 @@ class ContentViewModel {
         } catch {
             print("Failed to save highlight change: \(error.localizedDescription)")
         }
+    }
+
+    func removeHighlight(for verse: BibleVerse, context: ModelContext) {
+        setHighlightColor(nil, for: verse, context: context)
     }
 
     // MARK: - Clipboard
@@ -202,23 +207,23 @@ class ContentViewModel {
     func groupConsecutiveHighlightedVerses(_ verses: [BibleVerse]) -> [VerseGroup] {
         var groups: [VerseGroup] = []
         var currentGroup: [BibleVerse] = []
-        var currentHighlightState: Bool = false
+        var currentColor: String? = nil
 
         for verse in verses {
             if currentGroup.isEmpty {
                 currentGroup.append(verse)
-                currentHighlightState = verse.isHighlighted
-            } else if verse.isHighlighted == currentHighlightState {
+                currentColor = verse.highlightColor
+            } else if verse.highlightColor == currentColor {
                 currentGroup.append(verse)
             } else {
-                groups.append(VerseGroup(verses: currentGroup, isHighlighted: currentHighlightState))
+                groups.append(VerseGroup(verses: currentGroup, highlightColor: currentColor))
                 currentGroup = [verse]
-                currentHighlightState = verse.isHighlighted
+                currentColor = verse.highlightColor
             }
         }
 
         if !currentGroup.isEmpty {
-            groups.append(VerseGroup(verses: currentGroup, isHighlighted: currentHighlightState))
+            groups.append(VerseGroup(verses: currentGroup, highlightColor: currentColor))
         }
 
         return groups
