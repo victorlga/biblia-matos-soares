@@ -781,10 +781,10 @@ struct ContentView: View {
                 showReadingHistory = true
             } label: {
                 Image(systemName: "clock.arrow.circlepath")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(height: 50)
             }
 
             // Reading progress
@@ -793,10 +793,10 @@ struct ContentView: View {
                 showReadingProgress = true
             } label: {
                 Image(systemName: "chart.bar.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(height: 50)
             }
 
             // Notes
@@ -809,10 +809,10 @@ struct ContentView: View {
                 }
             } label: {
                 Image(systemName: "note.text")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(height: 50)
             }
 
             // Bookmarks
@@ -825,10 +825,10 @@ struct ContentView: View {
                 }
             } label: {
                 Image(systemName: "bookmark.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(height: 50)
             }
 
             // Settings (rightmost)
@@ -837,18 +837,19 @@ struct ContentView: View {
                 showSettings = true
             } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18))
+                    .font(.system(size: 20))
                     .foregroundColor(.white)
                     .frame(maxWidth: .infinity)
-                    .frame(height: 44)
+                    .frame(height: 50)
             }
         }
+        .padding(.vertical, 4)
         .background(
             Color.black
                 .overlay(
                     Rectangle()
-                        .fill(Color.gray.opacity(0.2))
-                        .frame(height: 1),
+                        .fill(Color.gray.opacity(0.3))
+                        .frame(height: 0.5),
                     alignment: .top
                 )
         )
