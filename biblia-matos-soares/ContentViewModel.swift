@@ -17,6 +17,8 @@ class ContentViewModel {
     // MARK: - Navigation state
     var selectedBook: String = BibleData.orderedBookNames.first ?? "Gênesis"
     var selectedChapter: Int = 1
+    /// When true, the onChange(of: selectedBook) handler should NOT reset chapter to 1.
+    var suppressChapterReset: Bool = false
 
     // MARK: - TTS
     var speechSynthesizer = AVSpeechSynthesizer()
@@ -98,9 +100,11 @@ class ContentViewModel {
             selectedChapter -= 1
         } else if currentBookIndex > 0 {
             let previousBookName = BibleData.orderedBookNames[currentBookIndex - 1]
+            suppressChapterReset = true
             selectedBook = previousBookName
             selectedChapter = BibleData.numberOfChapters(forBook: previousBookName) ?? 1
         } else {
+            suppressChapterReset = true
             selectedBook = BibleData.orderedBookNames.last ?? "Apocalipse"
             selectedChapter = BibleData.numberOfChapters(forBook: selectedBook) ?? 1
         }

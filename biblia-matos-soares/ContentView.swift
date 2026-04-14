@@ -169,7 +169,12 @@ struct ContentView: View {
                                                 }
                                                 let maxChapter = BibleData.numberOfChapters(forBook: viewModel.selectedBook) ?? 1
                                                 withAnimation(.easeOut(duration: 0.3)) {
-                                                    if viewModel.selectedChapter > maxChapter {
+                                                    // Only reset chapter if this isn't a programmatic
+                                                    // navigation that already set the target chapter
+                                                    // (e.g., goToPreviousChapter crossing book boundaries).
+                                                    if viewModel.suppressChapterReset {
+                                                        viewModel.suppressChapterReset = false
+                                                    } else if viewModel.selectedChapter > maxChapter {
                                                         viewModel.selectedChapter = 1
                                                     }
                                                     let targetVerse = scrollToVerse ?? 1
@@ -241,6 +246,7 @@ struct ContentView: View {
                 }
                 .navigationDestination(isPresented: $showReadingHistory) {
                     ReadingHistoryView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
                         viewModel.selectedBook = bookName
                         viewModel.selectedChapter = chapterNumber
                         scrollToVerse = verseNumber
@@ -248,6 +254,7 @@ struct ContentView: View {
                 }
                 .navigationDestination(isPresented: $showDailyVerse) {
                     DailyVerseView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
                         viewModel.selectedBook = bookName
                         viewModel.selectedChapter = chapterNumber
                         scrollToVerse = verseNumber
@@ -410,6 +417,7 @@ struct ContentView: View {
                 // Search button
                 NavigationLink {
                     SearchView { bookName, chapterNumber, verseNumber in
+                        viewModel.suppressChapterReset = true
                         viewModel.selectedBook = bookName
                         viewModel.selectedChapter = chapterNumber
                         scrollToVerse = verseNumber
@@ -497,6 +505,7 @@ struct ContentView: View {
                         // Notes button
                         NavigationLink {
                                 NotesView { bookName, chapterNumber, verseNumber in
+                                    viewModel.suppressChapterReset = true
                                     viewModel.selectedBook = bookName
                                     viewModel.selectedChapter = chapterNumber
                                     scrollToVerse = verseNumber
@@ -514,6 +523,7 @@ struct ContentView: View {
                         // Bookmarks button
                         NavigationLink {
                                 HighlightedVersesView { bookName, chapterNumber, verseNumber in
+                                    viewModel.suppressChapterReset = true
                                     viewModel.selectedBook = bookName
                                     viewModel.selectedChapter = chapterNumber
                                     scrollToVerse = verseNumber

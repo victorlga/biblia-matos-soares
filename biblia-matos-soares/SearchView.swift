@@ -181,7 +181,9 @@ struct SearchView: View {
         let trimmedQuery = query.trimmingCharacters(in: .whitespaces)
         let container = modelContext.container
 
-        let results: [BibleVerse] = await Task.detached {
+        // Fetch PersistentIdentifiers on background context to avoid
+        // cross-context access of SwiftData model objects.
+        let identifiers: [PersistentIdentifier] = await Task.detached {
             let backgroundContext = ModelContext(container)
             backgroundContext.autosaveEnabled = false
 
@@ -198,7 +200,8 @@ struct SearchView: View {
             descriptor.fetchLimit = 100
 
             do {
-                return try backgroundContext.fetch(descriptor)
+                let results = try backgroundContext.fetch(descriptor)
+                return results.map { $0.persistentModelID }
             } catch {
                 print("Erro ao buscar: \(error.localizedDescription)")
                 return []
@@ -206,7 +209,12 @@ struct SearchView: View {
         }.value
 
         guard !Task.isCancelled else { return }
-        searchResults = results
+
+        // Re-fetch from main context so model objects are safe to use on main thread
+        let mainResults = identifiers.compactMap { id in
+            modelContext.model(for: id) as? BibleVerse
+        }
+        searchResults = mainResults
         isSearching = false
     }
     
