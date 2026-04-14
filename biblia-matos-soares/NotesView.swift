@@ -181,7 +181,7 @@ struct NotesView: View {
                                                     HapticManager.shared.impact(style: .light)
                                                     openVerse(note)
                                                 } label: {
-                                                    Label(String(localized: "notes.open_verse"), systemImage: "book.open")
+                                                    Label(String(localized: "notes.open_verse"), systemImage: "book.closed")
                                                 }
 
                                                 Button {
