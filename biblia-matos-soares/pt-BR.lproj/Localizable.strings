@@ -41,6 +41,11 @@
 "search.placeholder" = "Buscar versículos...";
 "search.empty_prompt" = "Digite para buscar versículos";
 "search.no_results" = "Nenhum resultado encontrado";
+"search.first_100_results" = "Primeiros 100 resultados";
+"search.result_singular" = "resultado";
+"search.result_plural" = "resultados";
+"search.recent_title" = "Recentes";
+"search.clear" = "Limpar";
 
 /* Notes View */
 "notes.title" = "Notas";
