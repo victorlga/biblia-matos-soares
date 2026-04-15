@@ -40,9 +40,6 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-spm-
 
-      - name: Prepare Firebase config
-        run: cp GoogleService-Info.plist.template GoogleService-Info.plist
-
       - name: Build for Testing
         run: |
           xcodebuild build-for-testing \
