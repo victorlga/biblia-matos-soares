@@ -333,7 +333,9 @@ struct SearchView: View {
                 }
                 return sorted.prefix(100).map { $0.persistentModelID }
             } catch {
+                #if DEBUG
                 print("Erro ao buscar: \(error.localizedDescription)")
+                #endif
                 return []
             }
         }.value

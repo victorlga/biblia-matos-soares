@@ -3,17 +3,17 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>AIzaSyAOK9Gi1nx2GkF6eh52l4-gYzZRacNGI0k</string>
+	<string>YOUR_API_KEY</string>
 	<key>GCM_SENDER_ID</key>
-	<string>658176519948</string>
+	<string>YOUR_GCM_SENDER_ID</string>
 	<key>PLIST_VERSION</key>
 	<string>1</string>
 	<key>BUNDLE_ID</key>
-	<string>com.victorassis.biblia-matos-soares</string>
+	<string>com.yourcompany.biblia-matos-soares</string>
 	<key>PROJECT_ID</key>
-	<string>biblia-matos-soares</string>
+	<string>YOUR_PROJECT_ID</string>
 	<key>STORAGE_BUCKET</key>
-	<string>biblia-matos-soares.firebasestorage.app</string>
+	<string>YOUR_STORAGE_BUCKET</string>
 	<key>IS_ADS_ENABLED</key>
 	<false></false>
 	<key>IS_ANALYTICS_ENABLED</key>
@@ -25,6 +25,6 @@
 	<key>IS_SIGNIN_ENABLED</key>
 	<true></true>
 	<key>GOOGLE_APP_ID</key>
-	<string>1:658176519948:ios:66b23a16bddfed0456a329</string>
+	<string>YOUR_GOOGLE_APP_ID</string>
 </dict>
 </plist>

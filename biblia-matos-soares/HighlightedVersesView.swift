@@ -237,7 +237,9 @@ struct HighlightedVersesView: View {
         do {
             try modelContext.save()
         } catch {
+            #if DEBUG
             print("Failed to save highlight change: \(error.localizedDescription)")
+            #endif
         }
     }
 }

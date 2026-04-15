@@ -303,7 +303,9 @@ struct ReadingProgressView: View {
                 try context.save()
             }
         } catch {
+            #if DEBUG
             print("Failed to mark chapter as read: \(error.localizedDescription)")
+            #endif
         }
     }
 }

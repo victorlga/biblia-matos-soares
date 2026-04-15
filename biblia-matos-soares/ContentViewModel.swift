@@ -87,7 +87,9 @@ class ContentViewModel {
             )
             return try context.fetch(descriptor).first
         } catch {
+            #if DEBUG
             print("Erro ao buscar nota: \(error.localizedDescription)")
+            #endif
             return nil
         }
     }
@@ -148,7 +150,9 @@ class ContentViewModel {
         do {
             try context.save()
         } catch {
+            #if DEBUG
             print("Failed to save highlight change: \(error.localizedDescription)")
+            #endif
         }
     }
 

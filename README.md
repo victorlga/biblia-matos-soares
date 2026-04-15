@@ -8,5 +8,10 @@ Aplicativo iOS em Swift com a tradução da Bíblia Matos Soares.
 - Xcode
 - iOS 15+ (ou o alvo que você estiver usando)
 
+## Configuração do Firebase
+O arquivo `GoogleService-Info.plist` não é versionado por segurança. Para compilar o projeto:
+1. Copie `GoogleService-Info.plist.template` para `GoogleService-Info.plist`
+2. Preencha os valores com as credenciais do seu projeto Firebase
+
 ## Licença
 MIT

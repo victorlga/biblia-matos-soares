@@ -21,7 +21,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Request notification permissions
         UNUserNotificationCenter.current().delegate = self
         UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .badge, .sound]) { granted, error in
+            #if DEBUG
             print("🔔 Notification permission granted: \(granted)")
+            #endif
         }
         application.registerForRemoteNotifications()
         
@@ -38,7 +40,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     // Handle FCM token refresh
     func messaging(_ messaging: Messaging, didReceiveRegistrationToken fcmToken: String?) {
+        #if DEBUG
         print("✅ FCM token: \(String(describing: fcmToken))")
+        #endif
     }
     
     // Foreground notifications
@@ -75,8 +79,10 @@ struct biblia_matos_soaresApp: App {
                 configurations: [modelConfiguration]
             )
         } catch {
+            #if DEBUG
             print("⚠️ Staged migration failed: \(error)")
             print("⚠️ Attempting fallback: lightweight migration without migration plan...")
+            #endif
         }
 
         // Fallback 1: Try without migration plan (lightweight migration)
@@ -86,8 +92,10 @@ struct biblia_matos_soaresApp: App {
                 configurations: [modelConfiguration]
             )
         } catch {
+            #if DEBUG
             print("⚠️ Lightweight migration also failed: \(error)")
             print("⚠️ Deleting existing store and recreating...")
+            #endif
         }
 
         // Fallback 2: Delete the store and recreate from scratch.
@@ -102,7 +110,9 @@ struct biblia_matos_soaresApp: App {
         for path in storePaths {
             try? FileManager.default.removeItem(at: path)
         }
+        #if DEBUG
         print("🗑️ Deleted existing store files at \(storeURL.path)")
+        #endif
 
         do {
             return try ModelContainer(
@@ -125,11 +135,15 @@ struct biblia_matos_soaresApp: App {
                     let importer = BibleImporter(context: context)
 
                     if !(await importer.hasImportedData()) {
+                        #if DEBUG
                         print("📖 Importing Bible for the first time…")
+                        #endif
                         await importer.importBible()
                     } else {
+                        #if DEBUG
                         print("✅ Bible already imported.")
                         print("Total verses: \(await importer.countVerses())")
+                        #endif
                     }
 
                     // Signal that import is complete (or data was already present)
