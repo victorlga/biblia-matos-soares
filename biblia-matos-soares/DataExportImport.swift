@@ -144,16 +144,17 @@ struct DataExportImportManager {
 
     static func importData(from url: URL, context: ModelContext, noteConflict: ImportConflictResolution) -> (notes: Int, highlights: Int)? {
         do {
-            let data = try Data(contentsOf: url)
-
-            // Reject files that are unreasonably large
-            guard data.count <= maxImportFileSize else {
+            // Reject files that are unreasonably large before loading into memory
+            let fileAttributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            let fileSize = fileAttributes[.size] as? Int ?? 0
+            guard fileSize <= maxImportFileSize else {
                 #if DEBUG
-                print("Import rejected: file size \(data.count) exceeds limit")
+                print("Import rejected: file size \(fileSize) exceeds limit")
                 #endif
                 return nil
             }
 
+            let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             let importedData = try decoder.decode(ExportedData.self, from: data)
 
