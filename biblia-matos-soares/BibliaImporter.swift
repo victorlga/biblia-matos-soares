@@ -17,7 +17,9 @@ class BibleImporter {
 
     func importBible() async {
         guard let url = Bundle.main.url(forResource: "biblia_matos_soares_1956", withExtension: "json") else {
+            #if DEBUG
             print("❌ JSON não encontrado.")
+            #endif
             return
         }
 
@@ -44,17 +46,25 @@ class BibleImporter {
 
                     do {
                         try context.save()
+                        #if DEBUG
                         print("📖 Importado \(bookName) (\(bookIndex + 1)/\(totalBooks))")
+                        #endif
                     } catch {
+                        #if DEBUG
                         print("❌ Erro ao salvar \(bookName): \(error)")
+                        #endif
                     }
                 }
             }
 
+            #if DEBUG
             print("✅ Bíblia importada com sucesso: \(await countVerses()) versículos.")
+            #endif
 
         } catch {
+            #if DEBUG
             print("❌ Erro ao importar JSON: \(error)")
+            #endif
         }
     }
     
@@ -65,7 +75,9 @@ class BibleImporter {
             let count = try context.fetch(descriptor).count
             return count > 0
         } catch {
+            #if DEBUG
             print("Erro ao verificar dados importados: \(error)")
+            #endif
             return false
         }
     }
@@ -76,7 +88,9 @@ class BibleImporter {
             let descriptor = FetchDescriptor<BibleVerse>()
             return try context.fetch(descriptor).count
         } catch {
+            #if DEBUG
             print("Erro ao contar versículos: \(error)")
+            #endif
             return 0
         }
     }

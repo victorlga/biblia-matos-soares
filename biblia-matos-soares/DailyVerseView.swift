@@ -170,7 +170,9 @@ struct DailyVerseView: View {
 
             dailyVerse = allVerses[index]
         } catch {
+            #if DEBUG
             print("Erro ao carregar versículo do dia: \(error.localizedDescription)")
+            #endif
         }
     }
 
@@ -194,7 +196,9 @@ struct DailyVerseView: View {
         do {
             try modelContext.save()
         } catch {
+            #if DEBUG
             print("Erro ao salvar destaque: \(error.localizedDescription)")
+            #endif
         }
     }
 }

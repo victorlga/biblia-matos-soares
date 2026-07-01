@@ -8,5 +8,6 @@ Aplicativo iOS em Swift com a tradução da Bíblia Matos Soares.
 - Xcode
 - iOS 15+ (ou o alvo que você estiver usando)
 
+
 ## Licença
 MIT

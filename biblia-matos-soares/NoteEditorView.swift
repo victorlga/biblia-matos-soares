@@ -146,7 +146,9 @@ struct NoteEditorView: View {
             try modelContext.save()
             dismiss()
         } catch {
+            #if DEBUG
             print("Erro ao salvar nota: \(error.localizedDescription)")
+            #endif
         }
     }
 }

@@ -231,7 +231,9 @@ struct NotesView: View {
         do {
             try modelContext.save()
         } catch {
+            #if DEBUG
             print("Erro ao excluir nota: \(error.localizedDescription)")
+            #endif
         }
     }
     

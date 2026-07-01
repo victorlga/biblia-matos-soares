@@ -114,7 +114,9 @@ struct DataExportImportManager {
 
             return tempURL
         } catch {
+            #if DEBUG
             print("Export failed: \(error.localizedDescription)")
+            #endif
             return nil
         }
     }
@@ -134,19 +136,38 @@ struct DataExportImportManager {
 
     // MARK: - Import
 
+    /// Maximum allowed import file size (10 MB).
+    private static let maxImportFileSize = 10 * 1024 * 1024
+
+    /// Known highlight color values accepted during import.
+    private static let validHighlightColors: Set<String> = ["yellow", "green", "blue", "pink"]
+
     static func importData(from url: URL, context: ModelContext, noteConflict: ImportConflictResolution) -> (notes: Int, highlights: Int)? {
         do {
+            // Reject files that are unreasonably large before loading into memory
+            let fileAttributes = try FileManager.default.attributesOfItem(atPath: url.path)
+            let fileSize = fileAttributes[.size] as? Int ?? 0
+            guard fileSize <= maxImportFileSize else {
+                #if DEBUG
+                print("Import rejected: file size \(fileSize) exceeds limit")
+                #endif
+                return nil
+            }
+
             let data = try Data(contentsOf: url)
             let decoder = JSONDecoder()
             let importedData = try decoder.decode(ExportedData.self, from: data)
+
+            let knownBooks = Set(BibleData.bookOrderMap.keys)
 
             let dateFormatter = ISO8601DateFormatter()
 
             var notesImported = 0
             var highlightsImported = 0
 
-            // Import notes
+            // Import notes – skip entries referencing unknown books
             for exportedNote in importedData.notes {
+                guard knownBooks.contains(exportedNote.bookName) else { continue }
                 let book = exportedNote.bookName
                 let chapter = exportedNote.chapterNumber
                 let verseNum = exportedNote.verseNumber
@@ -201,8 +222,10 @@ struct DataExportImportManager {
                 }
             }
 
-            // Import highlights
+            // Import highlights – skip unknown books or invalid colors
             for exportedHighlight in importedData.highlights {
+                guard knownBooks.contains(exportedHighlight.bookName),
+                      validHighlightColors.contains(exportedHighlight.highlightColor) else { continue }
                 let book = exportedHighlight.bookName
                 let chapter = exportedHighlight.chapterNumber
                 let verseNum = exportedHighlight.verseNumber
@@ -227,7 +250,9 @@ struct DataExportImportManager {
             try context.save()
             return (notesImported, highlightsImported)
         } catch {
+            #if DEBUG
             print("Import failed: \(error.localizedDescription)")
+            #endif
             return nil
         }
     }
